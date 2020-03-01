@@ -29,7 +29,9 @@ impl ClauseAllocator {
         self.ra.push(Clause::new(lits));
         return cref;
     }
-    pub fn free(&mut self, cref: ClauseRef) {
+
+    //lazy_free free a specified region but only mark a clause deleted. not to free actual region
+    pub fn lazy_free(&mut self, cref: ClauseRef) {
         let clause = self.clause_mut(cref);
         //TODO
         //Delete it
