@@ -1,3 +1,4 @@
+use crate::lit::Lit;
 use crate::solver::Solver;
 use std::io::BufRead;
 
@@ -77,14 +78,39 @@ fn skip_whitespace(input: &[char], idx: &mut usize) {
     }
 }
 
+fn parse_clause(input: &[char], idx: &mut usize) -> Result<Vec<Lit>, failure::Error> {
+    let mut lits: Vec<Lit> = vec![];
+    loop {
+        skip_whitespace(input, idx);
+        let parsed_lit = parse_int(input, idx)?;
+        //A clause is supposed to be end with zero
+        //e.g.
+        //13 14 15 0
+        if parsed_lit == 0 {
+            skip_whitespace(input, idx);
+            break;
+        }
+        let var = parsed_lit.abs() - 1;
+        lits.push(if parsed_lit > 0 {
+            Lit::new(var, false)
+        } else {
+            Lit::new(var, true)
+        });
+    }
+    if input.len() != *idx {
+        return Err(format_err!("PARSE ERROR WRONG FORMAT: {:?}", input));
+    }
+    Ok(lits)
+}
 pub fn parse_dimacs_file(
     input_cnf_file: &std::fs::File,
     solver: &mut Solver,
     strict: Option<bool>,
 ) -> Result<(), failure::Error> {
     let reader = std::io::BufReader::new(input_cnf_file);
-    let mut parsed_vars: Option<i32> = None;
-    let mut parsed_clauses: Option<i32> = None;
+    let mut parsed_header_vars: Option<i32> = None;
+    let mut parsed_header_clauses: Option<i32> = None;
+    let mut clause_cnt = 0;
     for line in reader.lines() {
         let line: Vec<char> = line?.chars().collect();
         //line is empty or comment. skip
@@ -104,8 +130,8 @@ pub fn parse_dimacs_file(
                 //e.g. p cnf 90 300
                 match parse_vars_and_clauses(&line, &mut idx) {
                     Ok((vars, clauses)) => {
-                        parsed_vars = Some(vars);
-                        parsed_clauses = Some(clauses);
+                        parsed_header_vars = Some(vars);
+                        parsed_header_clauses = Some(clauses);
                     }
                     _ => {
                         //skip line
@@ -113,20 +139,27 @@ pub fn parse_dimacs_file(
                     }
                 }
             } else {
-                //NOTE
-                //ReadClause
-                break;
+                let lits = parse_clause(&line, &mut idx)?;
+                clause_cnt += 1;
+                println!("{:?}", lits);
             }
         }
     }
 
-    println!("{:?} {:?}", parsed_vars, parsed_clauses);
+    if strict.unwrap_or(false) {
+        if let Some(header_clause) = parsed_header_clauses {
+            if clause_cnt != header_clause {
+                return Err(format_err!("PARSE ERROR! DIMACS header mismatch: wrong number of clauses. header clause: {} clause: {}", header_clause, clause_cnt));
+            }
+        }
+    }
 
     Ok(())
 }
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::dimacs::*;
 
     #[test]
@@ -195,6 +228,25 @@ mod test {
         let line: Vec<char> = "p    cnf".to_string().chars().collect();
         let mut idx = 0;
         assert!(parse_vars_and_clauses(&line, &mut idx).is_err());
+    }
+
+    #[test]
+    fn test_parse_clause() {
+        let line: Vec<char> = "1 -2 3 0".to_string().chars().collect();
+        let mut idx = 0;
+        let clause = parse_clause(&line, &mut idx).unwrap();
+        assert_eq!(clause.len(), 3);
+        assert_eq!(clause[0], Lit::new(0, false));
+        assert_eq!(clause[1], Lit::new(1, true));
+        assert_eq!(clause[2], Lit::new(2, false));
+        let line: Vec<char> = "1 -2 3".to_string().chars().collect();
+        let mut idx = 0;
+        let clause = parse_clause(&line, &mut idx);
+        assert!(clause.is_err());
+        let line: Vec<char> = "1 0 3 0".to_string().chars().collect();
+        let mut idx = 0;
+        let clause = parse_clause(&line, &mut idx);
+        assert!(clause.is_err());
     }
 
 }
