@@ -1,3 +1,4 @@
+pub mod clause;
 pub mod dimacs;
 pub mod lit;
 pub mod solver;
