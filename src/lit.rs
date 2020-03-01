@@ -1,4 +1,5 @@
 use crate::Var;
+use std::ops::Not;
 //Lit represents a positive and negative variable like x1 and ¬x1
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub struct Lit {
@@ -26,12 +27,14 @@ impl Lit {
     pub fn var(&self) -> Var {
         self.x >> 1
     }
+}
 
-    //flip_sign return a Lit whose sign is flipped
-    //e.g.
-    // x1 -> ¬x1
-    // ¬x1 -> x1
-    pub fn flip_sign(&self) -> Lit {
+//e.g.
+// x1 -> ¬x1
+// ¬x1 -> x1
+impl Not for Lit {
+    type Output = Self;
+    fn not(self) -> Self::Output {
         Lit { x: self.x ^ 1 }
     }
 }
@@ -50,8 +53,8 @@ mod test {
         let lit = Lit::new(0, true);
         assert_eq!(lit.x, 1);
         assert_eq!(lit.neg(), true);
-        //flip
-        assert_eq!(lit.flip_sign(), Lit::new(0, false));
+        //not
+        assert_eq!(!lit, Lit::new(0, false));
 
         let lit = Lit::new(1, true);
         assert_eq!(lit.x, 3);
