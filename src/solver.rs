@@ -6,13 +6,8 @@ impl Solver {
         Solver {}
     }
 
-    pub fn add_clause(lits: &[Lit]) {
-        let ps = {
-            let mut ps = lits.to_vec();
-            ps.sort();
-            ps.dedup();
-
-            ps
-        };
+    pub fn add_clause(mut lits: Vec<Lit>) {
+        lits.sort();
+        lits.dedup();
     }
 }

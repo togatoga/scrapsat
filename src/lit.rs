@@ -1,7 +1,7 @@
 use crate::Var;
 use std::ops::Not;
 //Lit represents a positive and negative variable like x1 and ¬x1
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone)]
 pub struct Lit {
     x: i32,
 }
