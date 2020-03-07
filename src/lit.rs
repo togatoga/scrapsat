@@ -92,5 +92,19 @@ mod test {
         let lit = Lit::new(0, true);
         assert_eq!(lit.is_true(LitBool::True), false);
         assert_eq!(lit.is_true(LitBool::False), true);
+        assert_eq!(lit.is_true(LitBool::Undef), false);
+
+        assert_eq!(lit.is_false(LitBool::True), true);
+        assert_eq!(lit.is_false(LitBool::False), false);
+        assert_eq!(lit.is_false(LitBool::Undef), false);
+
+        let lit = Lit::new(0, false);
+        assert_eq!(lit.is_true(LitBool::True), true);
+        assert_eq!(lit.is_true(LitBool::False), false);
+        assert_eq!(lit.is_true(LitBool::Undef), false);
+
+        assert_eq!(lit.is_false(LitBool::True), false);
+        assert_eq!(lit.is_false(LitBool::False), true);
+        assert_eq!(lit.is_false(LitBool::Undef), false);
     }
 }
