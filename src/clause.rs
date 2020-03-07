@@ -15,7 +15,7 @@ impl Clause {
 type ClauseRef = usize;
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub struct ClauseAllocator {
-    ra: Vec<Clause>, //NOTE It's better to replace this with raw pointer region allocator to improve performance
+    ra: Vec<Clause>, //NOTE It's better to replace this with raw pointer region allocator to improve performancew
 }
 
 impl ClauseAllocator {
@@ -27,7 +27,7 @@ impl ClauseAllocator {
     pub fn alloc(&mut self, lits: &[Lit]) -> ClauseRef {
         let cref = self.ra.len();
         self.ra.push(Clause::new(lits));
-        return cref;
+        cref
     }
 
     //lazy_free free a specified region but only mark a clause deleted. not to free actual region

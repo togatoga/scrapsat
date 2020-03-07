@@ -248,5 +248,4 @@ mod test {
         let clause = parse_clause(&line, &mut idx);
         assert!(clause.is_err());
     }
-
 }

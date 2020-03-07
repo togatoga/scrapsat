@@ -8,7 +8,7 @@ pub struct Lit {
 
 impl Lit {
     pub fn new(x: i32, neg: bool) -> Lit {
-        assert!(x >= 0);
+        debug_assert!(x >= 0);
         if neg {
             Lit { x: 2 * x + 1 }
         } else {
@@ -17,11 +17,7 @@ impl Lit {
     }
     //neg returns a boolean whether lit is negative or not.
     pub fn neg(&self) -> bool {
-        if self.x % 2 != 0 {
-            true
-        } else {
-            false
-        }
+        self.x % 2 != 0
     }
 
     pub fn var(&self) -> Var {
