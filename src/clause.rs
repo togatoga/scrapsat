@@ -1,14 +1,64 @@
 use crate::lit::Lit;
+
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+struct ClauseHeader {
+    bit: u32,
+}
+
+impl ClauseHeader {
+    const BIT_DELETED: u32 = 0x01;
+    const BIT_TOUCHED: u32 = 0x02;
+    const BIT_LEARNT: u32 = 0x03;
+
+    pub fn new() -> ClauseHeader {
+        ClauseHeader { bit: 0 }
+    }
+    #[allow(dead_code)]
+    fn mark_learnt(&mut self) {
+        self.bit |= ClauseHeader::BIT_LEARNT;
+    }
+    #[allow(dead_code)]
+    fn is_learnt(&mut self) -> bool {
+        self.bit & ClauseHeader::BIT_LEARNT != 0
+    }
+    //NOTE
+    //TOUCHED value might be only used in simp
+    #[allow(dead_code)]
+    pub fn mark_touched(&mut self) {
+        self.bit |= ClauseHeader::BIT_TOUCHED;
+    }
+    #[allow(dead_code)]
+    pub fn is_touched(&self) -> bool {
+        self.bit & ClauseHeader::BIT_TOUCHED != 0
+    }
+
+    pub fn mark_deleted(&mut self) {
+        self.bit |= ClauseHeader::BIT_DELETED;
+    }
+    pub fn is_deleted(&self) -> bool {
+        self.bit & ClauseHeader::BIT_DELETED != 0
+    }
+    #[allow(dead_code)]
+    pub fn clear_mark(&mut self) {
+        self.bit = 0;
+    }
+}
+
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub struct Clause {
     lits: Vec<Lit>,
+    header: ClauseHeader,
 }
 
 impl Clause {
     pub fn new(lits: &[Lit]) -> Clause {
         Clause {
             lits: lits.to_vec(),
+            header: ClauseHeader::new(),
         }
+    }
+    pub fn len(&self) -> usize {
+        self.lits.len()
     }
 }
 
@@ -33,8 +83,8 @@ impl ClauseAllocator {
     //lazy_free free a specified region but only mark a clause deleted. not to free actual region
     pub fn lazy_free(&mut self, cref: ClauseRef) {
         let clause = self.clause_mut(cref);
-        //TODO
-        //Delete it
+        debug_assert!(clause.header.is_deleted());
+        clause.header.mark_deleted();
     }
 
     pub fn clause(&self, cref: ClauseRef) -> &Clause {
@@ -63,5 +113,15 @@ mod test {
             clause.lits,
             vec![Lit::new(1, true), Lit::new(1, false), Lit::new(3, true)]
         );
+    }
+
+    #[test]
+    fn test_clause_header() {
+        let mut header = ClauseHeader::new();
+        assert!(!header.is_deleted());
+        header.mark_learnt();
+        assert!(header.is_learnt());
+        header.mark_deleted();
+        assert!(header.is_deleted());
     }
 }
