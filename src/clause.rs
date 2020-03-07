@@ -57,6 +57,9 @@ impl Clause {
             header: ClauseHeader::new(),
         }
     }
+    pub fn is_empty(&self) -> bool {
+        self.lits.is_empty()
+    }
     pub fn len(&self) -> usize {
         self.lits.len()
     }

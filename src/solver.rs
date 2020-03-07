@@ -22,8 +22,8 @@ impl Solver {
     pub fn add_clause(&mut self, mut lits: Vec<Lit>) {
         //Reserve the space of variables
         lits.iter().for_each(|lit| {
-            let var = lit.var();
-            while var >= self.n_var() {
+            let var = lit.var().abs();
+            while var as usize >= self.n_var() {
                 self.new_var(lit.neg());
             }
         });

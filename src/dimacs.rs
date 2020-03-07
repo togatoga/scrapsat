@@ -90,7 +90,7 @@ fn parse_clause(input: &[char], idx: &mut usize) -> Result<Vec<Lit>, failure::Er
             skip_whitespace(input, idx);
             break;
         }
-        let neg = if parsed_lit > 0 { true } else { false };
+        let neg = parsed_lit > 0;
         let var = parsed_lit.abs() - 1;
         lits.push(Lit::new(var, neg));
     }
@@ -138,6 +138,7 @@ pub fn parse_dimacs_file(
             } else {
                 let lits = parse_clause(&line, &mut idx)?;
                 solver.add_clause(lits);
+                clause_cnt += 1;
             }
         }
     }
@@ -146,6 +147,11 @@ pub fn parse_dimacs_file(
         if let Some(header_clause) = parsed_header_clauses {
             if clause_cnt != header_clause {
                 return Err(format_err!("PARSE ERROR! DIMACS header mismatch: wrong number of clauses. header clause: {} clause: {}", header_clause, clause_cnt));
+            }
+        }
+        if let Some(header_var) = parsed_header_vars {
+            if header_var as usize != solver.n_var() {
+                return Err(format_err!("PARSE ERROR! DIMACS header mismatch: wrong number of variables. header variable: {} variables: {}", header_var, solver.n_var()));
             }
         }
     }
