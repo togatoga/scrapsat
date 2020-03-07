@@ -6,7 +6,8 @@ impl Solver {
         Solver {}
     }
 
-    pub fn add_clause(mut lits: Vec<Lit>) {
+    pub fn add_clause(&self, mut lits: Vec<Lit>) {
+        //check decision_level == 0;
         lits.sort();
         lits.dedup();
     }

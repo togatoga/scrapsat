@@ -140,8 +140,7 @@ pub fn parse_dimacs_file(
                 }
             } else {
                 let lits = parse_clause(&line, &mut idx)?;
-                clause_cnt += 1;
-                println!("{:?}", lits);
+                solver.add_clause(lits);
             }
         }
     }

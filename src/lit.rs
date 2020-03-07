@@ -1,5 +1,14 @@
 use crate::Var;
 use std::ops::Not;
+
+//This value is used for literal assignments
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone)]
+pub enum LitBool {
+    False,
+    True,
+    Undef,
+}
+
 //Lit represents a positive and negative variable like x1 and ¬x1
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone)]
 pub struct Lit {
@@ -15,9 +24,30 @@ impl Lit {
             Lit { x: 2 * x }
         }
     }
+
+    //pos return a boolean whether lit is positive or not.
+    pub fn pos(&self) -> bool {
+        self.x & 1 == 0
+    }
     //neg returns a boolean whether lit is negative or not.
     pub fn neg(&self) -> bool {
-        self.x % 2 != 0
+        self.x & 1 != 0
+    }
+
+    pub fn is_false(&self, val: LitBool) -> bool {
+        match val {
+            LitBool::False => !self.neg(),
+            LitBool::True => self.neg(),
+            LitBool::Undef => false,
+        }
+    }
+
+    pub fn is_true(&self, val: LitBool) -> bool {
+        match val {
+            LitBool::False => self.neg(),
+            LitBool::True => !self.neg(),
+            LitBool::Undef => false,
+        }
     }
 
     pub fn var(&self) -> Var {
@@ -54,5 +84,13 @@ mod test {
 
         let lit = Lit::new(1, true);
         assert_eq!(lit.x, 3);
+
+        let lit = Lit::new(0, false);
+        assert_eq!(lit.is_true(LitBool::True), true);
+        assert_eq!(lit.is_true(LitBool::False), false);
+
+        let lit = Lit::new(0, true);
+        assert_eq!(lit.is_true(LitBool::True), false);
+        assert_eq!(lit.is_true(LitBool::False), true);
     }
 }
