@@ -46,7 +46,7 @@ impl ClauseHeader {
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub struct Clause {
-    lits: Vec<Lit>,
+    pub lits: Vec<Lit>,
     header: ClauseHeader,
 }
 
@@ -65,7 +65,19 @@ impl Clause {
     }
 }
 
-type ClauseRef = usize;
+impl std::ops::Index<usize> for Clause {
+    type Output = Lit;
+    fn index(&self, idx: usize) -> &Lit {
+        &self.lits[idx]
+    }
+}
+impl std::ops::IndexMut<usize> for Clause {
+    fn index_mut(&mut self, idx: usize) -> &mut Lit {
+        &mut self.lits[idx]
+    }
+}
+
+pub type ClauseRef = usize;
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub struct ClauseAllocator {
     ra: Vec<Clause>, //NOTE It's better to replace this with raw pointer region allocator to improve performancew

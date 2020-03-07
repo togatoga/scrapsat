@@ -1,30 +1,33 @@
+use crate::assignments::Assignment;
+use crate::clause::ClauseRef;
 use crate::lit::{Lit, LitBool};
+use crate::watcher::Watches;
+
 pub struct Solver {
-    polarity: Vec<LitBool>, // The preferred polarity of each variable
-    assigns: Vec<LitBool>,  // The current number of variables.
+    assignment: Assignment,
+    watches: Watches,
 }
 
 impl Solver {
     pub fn new() -> Solver {
         Solver {
-            polarity: Vec::new(),
-            assigns: Vec::new(),
+            assignment: Assignment::new(),
+            watches: Watches::new(),
         }
     }
 
-    // n_var returns the current number of variables.
     pub fn n_var(&self) -> usize {
-        self.assigns.len()
+        self.assignment.n_var()
     }
-    pub fn new_var(&mut self, sign: bool) {
-        self.assigns.push(LitBool::Undef);
-    }
+
+    // n_var returns the current number of variables.
     pub fn add_clause(&mut self, mut lits: Vec<Lit>) {
         //Reserve the space of variables
         lits.iter().for_each(|lit| {
             let var = lit.var().abs();
-            while var as usize >= self.n_var() {
-                self.new_var(lit.neg());
+            while var as usize >= self.assignment.n_var() {
+                self.assignment.new_var();
+                self.watches.init_var(var);
             }
         });
 

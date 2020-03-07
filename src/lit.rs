@@ -1,3 +1,4 @@
+use crate::index_vec::Idx;
 use crate::Var;
 use std::ops::Not;
 
@@ -10,7 +11,7 @@ pub enum LitBool {
 }
 
 //Lit represents a positive and negative variable like x1 and ¬x1
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone, Default, Copy)]
 pub struct Lit {
     x: i32,
 }
@@ -52,6 +53,12 @@ impl Lit {
 
     pub fn var(&self) -> Var {
         self.x >> 1
+    }
+}
+
+impl Idx for Lit {
+    fn idx(&self) -> usize {
+        self.x as usize
     }
 }
 
