@@ -90,7 +90,7 @@ fn parse_clause(input: &[char], idx: &mut usize) -> Result<Vec<Lit>, failure::Er
             skip_whitespace(input, idx);
             break;
         }
-        let neg = parsed_lit > 0;
+        let neg = parsed_lit < 0;
         let var = parsed_lit.abs() - 1;
         lits.push(Lit::new(var, neg));
     }
