@@ -90,12 +90,9 @@ fn parse_clause(input: &[char], idx: &mut usize) -> Result<Vec<Lit>, failure::Er
             skip_whitespace(input, idx);
             break;
         }
+        let neg = if parsed_lit > 0 { true } else { false };
         let var = parsed_lit.abs() - 1;
-        lits.push(if parsed_lit > 0 {
-            Lit::new(var, false)
-        } else {
-            Lit::new(var, true)
-        });
+        lits.push(Lit::new(var, neg));
     }
     if input.len() != *idx {
         return Err(format_err!("PARSE ERROR WRONG FORMAT: {:?}", input));
