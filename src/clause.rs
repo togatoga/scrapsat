@@ -46,7 +46,7 @@ impl ClauseHeader {
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub struct Clause {
-    pub lits: Vec<Lit>,
+    lits: Vec<Lit>,
     pub header: ClauseHeader,
 }
 

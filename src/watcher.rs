@@ -36,8 +36,8 @@ impl Watches {
     }
     pub fn watch_clause(&mut self, c: &Clause, cref: ClauseRef) {
         debug_assert!(c.len() >= 2);
-        self.watches[!c.lits[0]].push(Watcher::new(cref, c.lits[1]));
-        self.watches[!c.lits[1]].push(Watcher::new(cref, c.lits[0]));
+        self.watches[!c[0]].push(Watcher::new(cref, c[1]));
+        self.watches[!c[1]].push(Watcher::new(cref, c[0]));
     }
 
     pub fn clean(&mut self, x: &Lit, ca: &ClauseAllocator) {
