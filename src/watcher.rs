@@ -44,6 +44,7 @@ impl Watches {
         for x in self.dirties.iter() {
             if self.dirty[*x] {
                 self.watches[*x].retain(|w| !ca.clause(w.cref).header.is_deleted());
+                self.dirty[x] = false;
             }
         }
         self.dirties.clear();
