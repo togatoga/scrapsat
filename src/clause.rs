@@ -113,20 +113,29 @@ impl ClauseAllocator {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::Var;
 
     #[test]
     fn test_clause_allocator() {
         let mut cla = ClauseAllocator::with_capacity(1024 * 1024);
-        let lits = vec![Lit::new(0, false), Lit::new(1, false), Lit::new(3, true)];
+        let lits = vec![
+            Lit::new(Var(0), false),
+            Lit::new(Var(1), false),
+            Lit::new(Var(3), true),
+        ];
         let cref = cla.alloc(&lits);
         assert_eq!(cref, 0);
         let clause = cla.clause(cref);
         assert_eq!(clause.lits, lits);
         let clause = cla.clause_mut(cref);
-        clause.lits[0] = Lit::new(1, true);
+        clause.lits[0] = Lit::new(Var(1), true);
         assert_eq!(
             clause.lits,
-            vec![Lit::new(1, true), Lit::new(1, false), Lit::new(3, true)]
+            vec![
+                Lit::new(Var(1), true),
+                Lit::new(Var(1), false),
+                Lit::new(Var(3), true)
+            ]
         );
     }
 

@@ -1,5 +1,6 @@
 use crate::lit::Lit;
 use crate::solver::Solver;
+use crate::Var;
 use std::io::BufRead;
 
 fn parse_int(input: &[char], idx: &mut usize) -> Result<i32, failure::Error> {
@@ -91,7 +92,7 @@ fn parse_clause(input: &[char], idx: &mut usize) -> Result<Vec<Lit>, failure::Er
             break;
         }
         let neg = parsed_lit < 0;
-        let var = parsed_lit.abs() - 1;
+        let var = Var(parsed_lit.abs() - 1);
         lits.push(Lit::new(var, neg));
     }
     if input.len() != *idx {
@@ -137,7 +138,7 @@ pub fn parse_dimacs_file(
                 }
             } else {
                 let lits = parse_clause(&line, &mut idx)?;
-                solver.add_clause(lits);
+                solver.add_clause(&lits);
                 clause_cnt += 1;
             }
         }
@@ -237,10 +238,11 @@ mod test {
         let line: Vec<char> = "1 -2 3 0".to_string().chars().collect();
         let mut idx = 0;
         let clause = parse_clause(&line, &mut idx).unwrap();
+
         assert_eq!(clause.len(), 3);
-        assert_eq!(clause[0], Lit::new(0, false));
-        assert_eq!(clause[1], Lit::new(1, true));
-        assert_eq!(clause[2], Lit::new(2, false));
+        assert_eq!(clause[0], Lit::new(Var(0), false));
+        assert_eq!(clause[1], Lit::new(Var(1), true));
+        assert_eq!(clause[2], Lit::new(Var(2), false));
         let line: Vec<char> = "1 -2 3".to_string().chars().collect();
         let mut idx = 0;
         let clause = parse_clause(&line, &mut idx);

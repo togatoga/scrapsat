@@ -1,6 +1,8 @@
 use crate::lit::Lit;
+use crate::Var;
 
 pub type LitVec<V> = IdxVec<Lit, V>;
+pub type VarVec<V> = IdxVec<Var, V>;
 
 pub trait Idx {
     fn idx(&self) -> usize;

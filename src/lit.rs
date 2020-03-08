@@ -3,7 +3,7 @@ use crate::Var;
 use std::ops::Not;
 
 //This value is used for literal assignments
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Clone, Copy)]
 pub enum LitBool {
     False,
     True,
@@ -17,12 +17,12 @@ pub struct Lit {
 }
 
 impl Lit {
-    pub fn new(x: i32, neg: bool) -> Lit {
-        debug_assert!(x >= 0);
+    pub fn new(x: Var, neg: bool) -> Lit {
+        debug_assert!(x.0 >= 0);
         if neg {
-            Lit { x: 2 * x + 1 }
+            Lit { x: 2 * x.0 + 1 }
         } else {
-            Lit { x: 2 * x }
+            Lit { x: 2 * x.0 }
         }
     }
 
@@ -52,7 +52,7 @@ impl Lit {
     }
 
     pub fn var(&self) -> Var {
-        self.x >> 1
+        Var(self.x >> 1)
     }
 }
 
@@ -79,24 +79,24 @@ mod test {
     #[test]
     fn test_lit() {
         //x1
-        let lit = Lit::new(0, false);
+        let lit = Lit::new(Var(0), false);
         assert_eq!(lit.x, 0);
         assert_eq!(lit.neg(), false);
         //¬x1
-        let lit = Lit::new(0, true);
+        let lit = Lit::new(Var(0), true);
         assert_eq!(lit.x, 1);
         assert_eq!(lit.neg(), true);
         //not
-        assert_eq!(!lit, Lit::new(0, false));
+        assert_eq!(!lit, Lit::new(Var(0), false));
 
-        let lit = Lit::new(1, true);
+        let lit = Lit::new(Var(1), true);
         assert_eq!(lit.x, 3);
 
-        let lit = Lit::new(0, false);
+        let lit = Lit::new(Var(0), false);
         assert_eq!(lit.is_true(LitBool::True), true);
         assert_eq!(lit.is_true(LitBool::False), false);
 
-        let lit = Lit::new(0, true);
+        let lit = Lit::new(Var(0), true);
         assert_eq!(lit.is_true(LitBool::True), false);
         assert_eq!(lit.is_true(LitBool::False), true);
         assert_eq!(lit.is_true(LitBool::Undef), false);
@@ -105,7 +105,7 @@ mod test {
         assert_eq!(lit.is_false(LitBool::False), false);
         assert_eq!(lit.is_false(LitBool::Undef), false);
 
-        let lit = Lit::new(0, false);
+        let lit = Lit::new(Var(0), false);
         assert_eq!(lit.is_true(LitBool::True), true);
         assert_eq!(lit.is_true(LitBool::False), false);
         assert_eq!(lit.is_true(LitBool::Undef), false);

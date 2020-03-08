@@ -1,4 +1,5 @@
 use crate::clause::ClauseRef;
+use crate::index_vec::Idx;
 use crate::lit::{Lit, LitBool};
 
 pub struct VarData {
@@ -29,6 +30,14 @@ impl Assignment {
             trail_lim: Vec::new(),
             head: 0,
         }
+    }
+
+    pub fn is_assigned_true(&self, p: Lit) -> bool {
+        p.is_true(self.assigns[p.var().idx()])
+    }
+
+    pub fn is_assigned_false(&self, p: Lit) -> bool {
+        p.is_false(self.assigns[p.var().idx()])
     }
 
     pub fn current_decision_level(&self) -> usize {
