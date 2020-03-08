@@ -40,18 +40,10 @@ impl Watches {
         self.watches[!c[1]].push(Watcher::new(cref, c[0]));
     }
 
-    pub fn clean(&mut self, x: &Lit, ca: &ClauseAllocator) {
-        self.watches[x.clone()].retain(|w| {
-            let clause = ca.clause(w.cref);
-            !clause.header.is_deleted()
-        });
-        self.dirty[*x] = false;
-    }
-
     pub fn clean_all(&mut self, ca: &ClauseAllocator) {
-        for x in self.dirties.iter_mut() {
+        for x in self.dirties.iter() {
             if self.dirty[*x] {
-                //self.clean(&x.clone(), ca);
+                self.watches[*x].retain(|w| !ca.clause(w.cref).header.is_deleted());
             }
         }
         self.dirties.clear();
