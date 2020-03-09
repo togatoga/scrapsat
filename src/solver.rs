@@ -9,6 +9,17 @@ pub struct Solver {
     watches: Watches,
 }
 
+impl Default for Solver {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub enum AddClauseResult {
+    UnSAT,
+    ClauseAlreadySatisfied,
+    None,
+}
 impl Solver {
     pub fn new() -> Solver {
         Solver {
@@ -16,13 +27,12 @@ impl Solver {
             watches: Watches::new(),
         }
     }
-
+    // n_var returns the current number of variables.
     pub fn n_var(&self) -> usize {
         self.assignment.n_var()
     }
 
-    // n_var returns the current number of variables.
-    pub fn add_clause(&mut self, lits: &[Lit]) {
+    pub fn add_clause(&mut self, lits: &[Lit]) -> AddClauseResult {
         //Reserve the space of variables
         lits.iter().for_each(|lit| {
             let var = lit.var();
@@ -38,9 +48,7 @@ impl Solver {
             let mut prev = None;
             for &lit in lits.iter() {
                 if self.assignment.is_assigned_true(lit) || prev == Some(!lit) {
-                    //TODO
-                    //
-                    //return ALREADY_SATISIFIED
+                    return AddClauseResult::ClauseAlreadySatisfied;
                 }
                 prev = Some(lit);
             }
@@ -50,11 +58,10 @@ impl Solver {
         match &lits[..] {
             [] => {
                 //UNSAT
+                AddClauseResult::UnSAT
             }
-            [unit] => {
-                //self.assignment.assign_lit(*unit, None);
-            }
-            lits => {}
+            [unit] => AddClauseResult::None,
+            lits => AddClauseResult::None,
         }
     }
 }

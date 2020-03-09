@@ -27,15 +27,15 @@ impl Lit {
     }
 
     //pos return a boolean whether lit is positive or not.
-    pub fn pos(&self) -> bool {
+    pub fn pos(self) -> bool {
         self.x & 1 == 0
     }
     //neg returns a boolean whether lit is negative or not.
-    pub fn neg(&self) -> bool {
+    pub fn neg(self) -> bool {
         self.x & 1 != 0
     }
 
-    pub fn is_false(&self, val: LitBool) -> bool {
+    pub fn is_false(self, val: LitBool) -> bool {
         match val {
             LitBool::False => !self.neg(),
             LitBool::True => self.neg(),
@@ -43,7 +43,7 @@ impl Lit {
         }
     }
 
-    pub fn is_true(&self, val: LitBool) -> bool {
+    pub fn is_true(self, val: LitBool) -> bool {
         match val {
             LitBool::False => self.neg(),
             LitBool::True => !self.neg(),
@@ -51,7 +51,7 @@ impl Lit {
         }
     }
 
-    pub fn var(&self) -> Var {
+    pub fn var(self) -> Var {
         Var(self.x >> 1)
     }
 }
