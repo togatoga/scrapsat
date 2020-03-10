@@ -1,6 +1,6 @@
 use crate::lit::Lit;
 
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Default)]
 pub struct ClauseHeader {
     bit: u32,
 }

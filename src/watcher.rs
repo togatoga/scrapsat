@@ -1,8 +1,9 @@
 use crate::clause::{Clause, ClauseAllocator, ClauseRef};
-use crate::index_vec::{Idx, IdxVec, LitVec};
+use crate::index_vec::LitVec;
 use crate::lit::Lit;
-use crate::{var_to_lit, Var};
+use crate::Var;
 
+#[derive(Default)]
 pub struct Watcher {
     cref: ClauseRef,
     blocker: Lit,
@@ -14,6 +15,7 @@ impl Watcher {
     }
 }
 
+#[derive(Default)]
 pub struct Watches {
     watches: LitVec<Vec<Watcher>>,
     dirty: LitVec<bool>,

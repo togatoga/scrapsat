@@ -27,26 +27,26 @@ impl Lit {
     }
 
     //pos return a boolean whether lit is positive or not.
-    pub fn pos(self) -> bool {
+    pub fn is_pos(self) -> bool {
         self.x & 1 == 0
     }
     //neg returns a boolean whether lit is negative or not.
-    pub fn neg(self) -> bool {
+    pub fn is_neg(self) -> bool {
         self.x & 1 != 0
     }
 
     pub fn is_false(self, val: LitBool) -> bool {
         match val {
-            LitBool::False => !self.neg(),
-            LitBool::True => self.neg(),
+            LitBool::False => !self.is_neg(),
+            LitBool::True => self.is_neg(),
             LitBool::Undef => false,
         }
     }
 
     pub fn is_true(self, val: LitBool) -> bool {
         match val {
-            LitBool::False => self.neg(),
-            LitBool::True => !self.neg(),
+            LitBool::False => self.is_neg(),
+            LitBool::True => !self.is_neg(),
             LitBool::Undef => false,
         }
     }
@@ -81,11 +81,13 @@ mod test {
         //x1
         let lit = Lit::new(Var(0), false);
         assert_eq!(lit.x, 0);
-        assert_eq!(lit.neg(), false);
+        assert_eq!(lit.is_neg(), false);
+        assert_eq!(lit.is_pos(), true);
         //¬x1
         let lit = Lit::new(Var(0), true);
         assert_eq!(lit.x, 1);
-        assert_eq!(lit.neg(), true);
+        assert_eq!(lit.is_neg(), true);
+        assert_eq!(lit.is_pos(), false);
         //not
         assert_eq!(!lit, Lit::new(Var(0), false));
 

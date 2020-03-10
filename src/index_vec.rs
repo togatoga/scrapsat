@@ -8,6 +8,7 @@ pub trait Idx {
     fn idx(&self) -> usize;
 }
 
+#[derive(Default)]
 pub struct IdxVec<T: Idx, V> {
     data: Vec<V>,
     pha: std::marker::PhantomData<T>,

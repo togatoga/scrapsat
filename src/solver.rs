@@ -1,7 +1,6 @@
 use crate::assignments::Assignment;
-use crate::clause::ClauseRef;
 use crate::index_vec::Idx;
-use crate::lit::{Lit, LitBool};
+use crate::lit::Lit;
 use crate::watcher::Watches;
 
 pub struct Solver {

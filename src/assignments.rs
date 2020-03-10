@@ -13,6 +13,7 @@ impl VarData {
     }
 }
 
+#[derive(Default)]
 pub struct Assignment {
     assigns: Vec<LitBool>,  //The current assignments.
     var_data: Vec<VarData>, //Stores reason and level for each variable
