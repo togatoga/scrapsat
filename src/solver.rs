@@ -86,24 +86,29 @@ impl Solver {
     }
 
     pub fn propagate(&mut self) -> Option<ClauseRef> {
-        let conflict_ref = None;
+        let mut conflict_ref = None;
         self.watches.clean_all(&self.ca);
         while let Some(p) = self.assignment.front_trail() {
             let not_p = !p;
-            let mut watches = self.watches.get_watches_mut(p);
             let mut tail_idx = 0;
-            'next_watch: for idx in 0..watches.len() {
-                let mut watcher = &mut watches[idx];
+            let end_idx = self.watches.get_watches(p).len();
+
+            'next_watch: for idx in 0..end_idx {
+                debug_assert!(conflict_ref.is_none());
+                let (w_cref, w_blocker) = {
+                    let watcher = self.watches.get_watches(p)[idx];
+                    (watcher.cref, watcher.blocker)
+                };
                 // Try not to avoid inspecting the clause:
-                if self.assignment.is_assigned_true(watcher.blocker) {
-                    watches[tail_idx] = Watcher {
-                        cref: watcher.cref,
-                        blocker: watcher.blocker,
+                if self.assignment.is_assigned_true(w_blocker) {
+                    *self.watches.get_watcher_mut(p, tail_idx) = Watcher {
+                        cref: w_cref,
+                        blocker: w_blocker,
                     };
                     tail_idx += 1;
-                    continue;
+                    continue 'next_watch;
                 }
-                let clause = self.ca.clause_mut(watcher.cref);
+                let clause = self.ca.clause_mut(w_cref);
 
                 // Make sure the false literal is data[1]
                 if clause[0] == not_p {
@@ -115,13 +120,13 @@ impl Solver {
                 //If 0th watch is true, then clause is already satisfied.
                 let first = clause[0];
                 let cw = Watcher {
-                    cref: watcher.cref,
-                    blocker: clause[0],
+                    cref: w_cref,
+                    blocker: first,
                 };
-                if cw.blocker != watcher.blocker && self.assignment.is_assigned_true(cw.blocker) {
-                    watches[tail_idx] = cw;
+                if cw.blocker != w_blocker && self.assignment.is_assigned_true(cw.blocker) {
+                    *self.watches.get_watcher_mut(p, tail_idx) = cw;
                     tail_idx += 1;
-                    continue;
+                    continue 'next_watch;
                 }
 
                 //Look for new watch
@@ -129,36 +134,30 @@ impl Solver {
                     if !self.assignment.is_assigned_false(clause[k]) {
                         clause[1] = clause[k];
                         clause[k] = not_p;
-                        //self.watches.watches[!clause[1]].push(cw);
+                        self.watches.watches[!clause[1]].push(cw);
                         continue 'next_watch;
                     }
                 }
-                watches[tail_idx] = Watcher {
-                    cref: cw.cref,
-                    blocker: cw.blocker,
-                };
+                *self.watches.get_watcher_mut(p, tail_idx) = cw;
                 tail_idx += 1;
                 //Did not find watch -- clause is unit under assignment
                 if self.assignment.is_assigned_false(cw.blocker) {
                     // Copy the remaining watches
                     let mut tmp_idx = idx;
-                    while tmp_idx < watches.len() {
-                        watches[tail_idx] = Watcher {
-                            cref: watches[tmp_idx].cref,
-                            blocker: watches[tmp_idx].blocker,
-                        };
+                    while tmp_idx < end_idx {
+                        *self.watches.get_watcher_mut(p, tail_idx) =
+                            self.watches.get_watches(p)[tmp_idx];
                         tmp_idx += 1;
                         tail_idx += 1;
                     }
-                    // self.watches.watches.truncate(tail_idx);
-                    return Some(cw.cref);
+                    conflict_ref = Some(cw.cref);
+                    break;
                 } else {
                     self.assignment.assign_true(cw.blocker, Some(cw.cref));
                 }
             }
-            watches.truncate(tail_idx);
+            self.watches.watches[p].truncate(tail_idx);
         }
-
         conflict_ref
     }
 }

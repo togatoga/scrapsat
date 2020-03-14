@@ -3,7 +3,7 @@ use crate::index_vec::{Idx, LitVec};
 use crate::lit::Lit;
 use crate::Var;
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub struct Watcher {
     pub cref: ClauseRef,
     pub blocker: Lit,
@@ -30,6 +30,7 @@ impl Watches {
             dirties: Vec::new(),
         }
     }
+
     pub fn init_var(&mut self, v: Var) {
         self.watches.init(Lit::new(v, false));
         self.watches.init(Lit::new(v, true));
@@ -68,7 +69,12 @@ impl Watches {
         self.smudge(!c[0]);
         self.smudge(!c[1]);
     }
-
+    pub fn get_watcher_mut(&mut self, p: Lit, idx: usize) -> &mut Watcher {
+        &mut self.get_watches_mut(p)[idx]
+    }
+    pub fn get_watcher(&self, p: Lit, idx: usize) -> &Watcher {
+        &self.get_watches(p)[idx]
+    }
     pub fn get_watches(&self, p: Lit) -> &[Watcher] {
         &self.watches[p]
     }
