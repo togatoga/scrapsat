@@ -26,7 +26,9 @@ impl<T: Idx, V: Default> IdxVec<T, V> {
             self.data.push(V::default());
         }
     }
-
+    pub fn truncate(&mut self, len: usize) {
+        self.data.truncate(len);
+    }
     pub fn iter(&self) -> std::slice::Iter<V> {
         self.data.iter()
     }

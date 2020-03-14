@@ -52,6 +52,7 @@ impl Solver {
             let mut lits = lits.to_vec();
             lits.sort();
             lits.dedup();
+            lits.retain(|&lit| !self.assignment.is_assigned_false(lit));
             let mut prev = None;
             for &lit in lits.iter() {
                 if self.assignment.is_assigned_true(lit) || prev == Some(!lit) {
@@ -59,8 +60,10 @@ impl Solver {
                 }
                 prev = Some(lit);
             }
+
             lits
         };
+        println!("{:?}", lits);
         match &lits[..] {
             [] => {
                 //UNSAT
@@ -68,7 +71,10 @@ impl Solver {
             }
             [unit] => {
                 self.assignment.assign_true(*unit, None);
-                AddClauseResult::None
+                match self.propagate() {
+                    Some(_) => AddClauseResult::UnSAT,
+                    None => AddClauseResult::None,
+                }
             }
             lits => {
                 let cref = self.ca.alloc(lits);
@@ -85,11 +91,16 @@ impl Solver {
         while let Some(p) = self.assignment.front_trail() {
             let not_p = !p;
             let mut watches = self.watches.get_watches_mut(p);
-            let mut tail_idx = None;
-            'next_watch: for (idx, watcher) in watches.iter_mut().enumerate() {
+            let mut tail_idx = 0;
+            'next_watch: for idx in 0..watches.len() {
+                let mut watcher = &mut watches[idx];
                 // Try not to avoid inspecting the clause:
                 if self.assignment.is_assigned_true(watcher.blocker) {
-                    tail_idx = Some(idx);
+                    watches[tail_idx] = Watcher {
+                        cref: watcher.cref,
+                        blocker: watcher.blocker,
+                    };
+                    tail_idx += 1;
                     continue;
                 }
                 let clause = self.ca.clause_mut(watcher.cref);
@@ -99,7 +110,7 @@ impl Solver {
                     clause[0] = clause[1];
                     clause[1] = not_p;
                 }
-                debug_assert_eq!(clause[1] == not_p);
+                debug_assert_eq!(clause[1], not_p);
 
                 //If 0th watch is true, then clause is already satisfied.
                 let first = clause[0];
@@ -108,6 +119,8 @@ impl Solver {
                     blocker: clause[0],
                 };
                 if cw.blocker != watcher.blocker && self.assignment.is_assigned_true(cw.blocker) {
+                    watches[tail_idx] = cw;
+                    tail_idx += 1;
                     continue;
                 }
 
@@ -116,20 +129,34 @@ impl Solver {
                     if !self.assignment.is_assigned_false(clause[k]) {
                         clause[1] = clause[k];
                         clause[k] = not_p;
-                        self.watches.watches[!clause[1]].push(cw);
+                        //self.watches.watches[!clause[1]].push(cw);
                         continue 'next_watch;
                     }
                 }
-
+                watches[tail_idx] = Watcher {
+                    cref: cw.cref,
+                    blocker: cw.blocker,
+                };
+                tail_idx += 1;
                 //Did not find watch -- clause is unit under assignment
                 if self.assignment.is_assigned_false(cw.blocker) {
                     // Copy the remaining watches
-
+                    let mut tmp_idx = idx;
+                    while tmp_idx < watches.len() {
+                        watches[tail_idx] = Watcher {
+                            cref: watches[tmp_idx].cref,
+                            blocker: watches[tmp_idx].blocker,
+                        };
+                        tmp_idx += 1;
+                        tail_idx += 1;
+                    }
+                    // self.watches.watches.truncate(tail_idx);
                     return Some(cw.cref);
                 } else {
                     self.assignment.assign_true(cw.blocker, Some(cw.cref));
                 }
             }
+            watches.truncate(tail_idx);
         }
 
         conflict_ref
