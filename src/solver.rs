@@ -129,6 +129,7 @@ impl Solver {
 
                 //Look for new watch
                 for k in 2..clause.len() {
+                    //true or unassigned
                     if !self.assignment.is_assigned_false(clause[k]) {
                         clause[1] = clause[k];
                         clause[k] = not_p;
