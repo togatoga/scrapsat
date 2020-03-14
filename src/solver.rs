@@ -131,6 +131,7 @@ impl Solver {
                 for k in 2..clause.len() {
                     //true or unassigned
                     if !self.assignment.is_assigned_false(clause[k]) {
+                        debug_assert_eq!(clause[1], not_p);
                         clause[1] = clause[k];
                         clause[k] = not_p;
                         self.watches.get_watches_mut(!clause[1]).push(cw);
