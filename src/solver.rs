@@ -132,7 +132,7 @@ impl Solver {
                     if !self.assignment.is_assigned_false(clause[k]) {
                         clause[1] = clause[k];
                         clause[k] = not_p;
-                        self.watches.watches[!clause[1]].push(cw);
+                        self.watches.get_watches_mut(!clause[1]).push(cw);
                         continue 'next_watch;
                     }
                 }
@@ -150,13 +150,13 @@ impl Solver {
                     }
                     //Cancel the rest of trail.
                     self.assignment.head = self.assignment.trail.len();
-                    self.watches.watches[p].truncate(tail_idx);
+                    self.watches.get_watches_mut(p).truncate(tail_idx);
                     return Some(cw.cref);
                 } else {
                     self.assignment.assign_true(cw.blocker, Some(cw.cref));
                 }
             }
-            self.watches.watches[p].truncate(tail_idx);
+            self.watches.get_watches_mut(p).truncate(tail_idx);
         }
         None
     }
