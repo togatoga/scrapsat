@@ -17,9 +17,9 @@ impl VarData {
 pub struct Assignment {
     assigns: Vec<LitBool>,  //Var to LitBool: The current assignments.
     var_data: Vec<VarData>, //Var to VarData: Stores reason and level for each variable
-    trail: Vec<Lit>, //Assignment stack; stores all assignments made in the order they were made.
+    pub trail: Vec<Lit>, //Assignment stack; stores all assignments made in the order they were made.
     trail_lim: Vec<usize>, //Separator indices for different decision levels in 'trail'.
-    head: usize, // Head of queue (as index into the trail -- no more explicit propagation queue in MiniSat).
+    pub head: usize, // Head of queue (as index into the trail -- no more explicit propagation queue in MiniSat).
 }
 
 impl Assignment {
@@ -46,7 +46,7 @@ impl Assignment {
         self.trail.push(p);
     }
 
-    pub fn front_trail(&mut self) -> Option<Lit> {
+    pub fn pop_front_trail(&mut self) -> Option<Lit> {
         if self.head < self.trail.len() {
             let p = self.trail[self.head];
             self.head += 1;

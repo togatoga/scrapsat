@@ -86,15 +86,13 @@ impl Solver {
     }
 
     pub fn propagate(&mut self) -> Option<ClauseRef> {
-        let mut conflict_ref = None;
         self.watches.clean_all(&self.ca);
-        while let Some(p) = self.assignment.front_trail() {
+        while let Some(p) = self.assignment.pop_front_trail() {
             let not_p = !p;
             let mut tail_idx = 0;
             let end_idx = self.watches.get_watches(p).len();
 
             'next_watch: for idx in 0..end_idx {
-                debug_assert!(conflict_ref.is_none());
                 let (w_cref, w_blocker) = {
                     let watcher = self.watches.get_watches(p)[idx];
                     (watcher.cref, watcher.blocker)
@@ -150,14 +148,16 @@ impl Solver {
                         tmp_idx += 1;
                         tail_idx += 1;
                     }
-                    conflict_ref = Some(cw.cref);
-                    break;
+                    //Cancel the rest of trail.
+                    self.assignment.head = self.assignment.trail.len();
+                    self.watches.watches[p].truncate(tail_idx);
+                    return Some(cw.cref);
                 } else {
                     self.assignment.assign_true(cw.blocker, Some(cw.cref));
                 }
             }
             self.watches.watches[p].truncate(tail_idx);
         }
-        conflict_ref
+        None
     }
 }

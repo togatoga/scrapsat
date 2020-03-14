@@ -1,5 +1,5 @@
 use crate::clause::{Clause, ClauseAllocator, ClauseRef};
-use crate::index_vec::{Idx, LitVec};
+use crate::index_vec::LitVec;
 use crate::lit::Lit;
 use crate::Var;
 
