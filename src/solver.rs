@@ -1,11 +1,15 @@
 use crate::assignments::Assignment;
+use crate::clause::{ClauseAllocator, ClauseRef};
 use crate::index_vec::Idx;
 use crate::lit::Lit;
-use crate::watcher::Watches;
+use crate::watcher::{Watcher, Watches};
 
 pub struct Solver {
     assignment: Assignment,
     watches: Watches,
+    ca: ClauseAllocator,
+    clauses: Vec<ClauseRef>,        //vector of problem clauses.
+    learnt_clauses: Vec<ClauseRef>, //vector of problem clauses.
 }
 
 impl Default for Solver {
@@ -24,8 +28,12 @@ impl Solver {
         Solver {
             assignment: Assignment::new(),
             watches: Watches::new(),
+            ca: ClauseAllocator::new(),
+            clauses: Vec::new(),
+            learnt_clauses: Vec::new(),
         }
     }
+
     // n_var returns the current number of variables.
     pub fn n_var(&self) -> usize {
         self.assignment.n_var()
@@ -51,7 +59,6 @@ impl Solver {
                 }
                 prev = Some(lit);
             }
-
             lits
         };
         match &lits[..] {
@@ -59,8 +66,72 @@ impl Solver {
                 //UNSAT
                 AddClauseResult::UnSAT
             }
-            [unit] => AddClauseResult::None,
-            lits => AddClauseResult::None,
+            [unit] => {
+                self.assignment.assign_true(*unit, None);
+                AddClauseResult::None
+            }
+            lits => {
+                let cref = self.ca.alloc(lits);
+                self.clauses.push(cref);
+                self.watches.watch_clause(self.ca.clause(cref), cref);
+                AddClauseResult::None
+            }
         }
+    }
+
+    pub fn propagate(&mut self) -> Option<ClauseRef> {
+        let conflict_ref = None;
+        self.watches.clean_all(&self.ca);
+        while let Some(p) = self.assignment.front_trail() {
+            let not_p = !p;
+            let mut watches = self.watches.get_watches_mut(p);
+            let mut tail_idx = None;
+            'next_watch: for (idx, watcher) in watches.iter_mut().enumerate() {
+                // Try not to avoid inspecting the clause:
+                if self.assignment.is_assigned_true(watcher.blocker) {
+                    tail_idx = Some(idx);
+                    continue;
+                }
+                let clause = self.ca.clause_mut(watcher.cref);
+
+                // Make sure the false literal is data[1]
+                if clause[0] == not_p {
+                    clause[0] = clause[1];
+                    clause[1] = not_p;
+                }
+                debug_assert_eq!(clause[1] == not_p);
+
+                //If 0th watch is true, then clause is already satisfied.
+                let first = clause[0];
+                let cw = Watcher {
+                    cref: watcher.cref,
+                    blocker: clause[0],
+                };
+                if cw.blocker != watcher.blocker && self.assignment.is_assigned_true(cw.blocker) {
+                    continue;
+                }
+
+                //Look for new watch
+                for k in 2..clause.len() {
+                    if !self.assignment.is_assigned_false(clause[k]) {
+                        clause[1] = clause[k];
+                        clause[k] = not_p;
+                        self.watches.watches[!clause[1]].push(cw);
+                        continue 'next_watch;
+                    }
+                }
+
+                //Did not find watch -- clause is unit under assignment
+                if self.assignment.is_assigned_false(cw.blocker) {
+                    // Copy the remaining watches
+
+                    return Some(cw.cref);
+                } else {
+                    self.assignment.assign_true(cw.blocker, Some(cw.cref));
+                }
+            }
+        }
+
+        conflict_ref
     }
 }

@@ -1,12 +1,12 @@
 use crate::clause::{Clause, ClauseAllocator, ClauseRef};
-use crate::index_vec::LitVec;
+use crate::index_vec::{Idx, LitVec};
 use crate::lit::Lit;
 use crate::Var;
 
 #[derive(Default)]
 pub struct Watcher {
-    cref: ClauseRef,
-    blocker: Lit,
+    pub cref: ClauseRef,
+    pub blocker: Lit,
 }
 
 impl Watcher {
@@ -17,7 +17,7 @@ impl Watcher {
 
 #[derive(Default)]
 pub struct Watches {
-    watches: LitVec<Vec<Watcher>>,
+    pub watches: LitVec<Vec<Watcher>>,
     dirty: LitVec<bool>,
     dirties: Vec<Lit>,
 }
@@ -67,5 +67,12 @@ impl Watches {
         debug_assert!(c.len() >= 2);
         self.smudge(!c[0]);
         self.smudge(!c[1]);
+    }
+
+    pub fn get_watches(&self, p: Lit) -> &[Watcher] {
+        &self.watches[p]
+    }
+    pub fn get_watches_mut(&mut self, p: Lit) -> &mut Vec<Watcher> {
+        &mut self.watches[p]
     }
 }

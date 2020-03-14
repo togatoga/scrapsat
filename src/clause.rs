@@ -80,10 +80,13 @@ impl std::ops::IndexMut<usize> for Clause {
 pub type ClauseRef = usize;
 #[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
 pub struct ClauseAllocator {
-    ra: Vec<Clause>, //NOTE It's better to replace this with raw pointer region allocator to improve performancew
+    ra: Vec<Clause>, //NOTE It's better to replace this with raw pointer region allocator to improve the performance
 }
 
 impl ClauseAllocator {
+    pub fn new() -> ClauseAllocator {
+        ClauseAllocator { ra: Vec::new() }
+    }
     pub fn with_capacity(capacity: usize) -> ClauseAllocator {
         ClauseAllocator {
             ra: Vec::with_capacity(capacity),
