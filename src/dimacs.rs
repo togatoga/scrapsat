@@ -1,4 +1,5 @@
 use crate::lit::Lit;
+use crate::solver::AddClauseResult;
 use crate::solver::Solver;
 use crate::Var;
 use std::io::BufRead;
@@ -138,7 +139,10 @@ pub fn parse_dimacs_file(
                 }
             } else {
                 let lits = parse_clause(&line, &mut idx)?;
-                solver.add_clause(&lits);
+                match solver.add_clause(&lits) {
+                    AddClauseResult::UnSAT => return Ok(()),
+                    _ => {}
+                }
                 clause_cnt += 1;
             }
         }

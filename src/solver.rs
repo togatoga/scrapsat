@@ -1,15 +1,16 @@
 use crate::assignments::Assignment;
 use crate::clause::{ClauseAllocator, ClauseRef};
 use crate::index_vec::Idx;
-use crate::lit::Lit;
+use crate::lit::{Lit, LitBool};
 use crate::watcher::{Watcher, Watches};
 
 pub struct Solver {
     assignment: Assignment,
     watches: Watches,
     ca: ClauseAllocator,
-    clauses: Vec<ClauseRef>,        //vector of problem clauses.
-    learnt_clauses: Vec<ClauseRef>, //vector of problem clauses.
+    clauses: Vec<ClauseRef>,        //vector of problem clauses
+    learnt_clauses: Vec<ClauseRef>, //vector of problem clauses
+    ok: bool, // If FALSE, the constraints are already unsatisfiable. No part of the solver state may be used!
 }
 
 impl Default for Solver {
@@ -31,6 +32,7 @@ impl Solver {
             ca: ClauseAllocator::new(),
             clauses: Vec::new(),
             learnt_clauses: Vec::new(),
+            ok: true,
         }
     }
 
@@ -72,7 +74,10 @@ impl Solver {
             [unit] => {
                 self.assignment.assign_true(*unit, None);
                 match self.propagate() {
-                    Some(_) => AddClauseResult::UnSAT,
+                    Some(_) => {
+                        self.ok = false;
+                        AddClauseResult::UnSAT
+                    }
                     None => AddClauseResult::None,
                 }
             }
@@ -161,5 +166,94 @@ impl Solver {
             self.watches.get_watches_mut(p).truncate(tail_idx);
         }
         None
+    }
+
+    pub fn solve_limited(&mut self) -> LitBool {
+        if self.ok {
+            return LitBool::False;
+        }
+        let mut status = LitBool::Undef;
+
+        let luby = |y: f64, mut x: i32| -> f64 {
+            /*
+             Finite subsequences of the Luby-sequence:
+
+             0: 1
+             1: 1 1 2
+             2: 1 1 2 1 1 2 4
+             3: 1 1 2 1 1 2 4 1 1 2 1 1 2 4 8
+             ...
+
+
+            */
+            let mut size = 1;
+            let mut seq = 0;
+            while size < x + 1 {
+                seq += 1;
+                size = 2 * size + 1;
+            }
+            while size - 1 != x {
+                size = (size - 1) >> 1;
+                seq -= 1;
+                x %= size;
+            }
+            y.powi(x)
+        };
+        let mut curr_restarts = 0;
+        let mut restart_inc = 1.5;
+        let mut restart_first = 100;
+        while status == LitBool::Undef {
+            let rest_base = luby(restart_inc, curr_restarts);
+            let nof_conflicts = (rest_base * restart_first as f64) as i32;
+            status = self.search(nof_conflicts);
+        }
+        status
+    }
+
+    pub fn analyze(&mut self, confl: ClauseRef, learnt_clause: &mut Vec<Lit>) -> usize {
+        0
+    }
+
+    /*_________________________________________________________________________________________________
+    |
+    |  search : (nof_conflicts : int) (params : const SearchParams&)  ->  [lbool]
+    |
+    |  Description:
+    |    Search for a model the specified number of conflicts.
+    |    NOTE! Use negative value for 'nof_conflicts' indicate infinity.
+    |
+    |  Output:
+    |    'l_True' if a partial assigment that is consistent with respect to the clauseset is found. If
+    |    all variables are decision variables, this means that the clause set is satisfiable. 'l_False'
+    |    if the clause set is unsatisfiable. 'l_Undef' if the bound on number of conflicts is reached.
+    |________________________________________________________________________________________________@*/
+    fn search(&mut self, nof_conflicts: i32) -> LitBool {
+        debug_assert!(self.ok);
+        let mut learnt_clause: Vec<Lit> = vec![];
+        loop {
+            let confl = self.propagate();
+            if let Some(confl) = confl {
+                //CONFLICT
+                if self.assignment.current_decision_level() == 0 {
+                    return LitBool::False;
+                }
+                learnt_clause.clear();
+                //analyze
+                let backtrack_level = self.analyze(confl, &mut learnt_clause);
+                //cancelUntil
+                if learnt_clause.len() == 1 {
+                    self.assignment.assign_true(learnt_clause[0], None);
+                } else {
+                    let cr = self.ca.alloc(&learnt_clause);
+                    self.learnt_clauses.push(cr);
+                    self.watches.watch_clause(self.ca.clause(cref), cref);
+                    self.assignment.assign_true(learnt_clause[0], Some(cr));
+                }
+            } else {
+                //NO CONFLICT
+            }
+        }
+
+        LitBool::Undef
     }
 }
