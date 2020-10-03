@@ -246,7 +246,7 @@ impl Solver {
                 } else {
                     let cr = self.ca.alloc(&learnt_clause);
                     self.learnt_clauses.push(cr);
-                    self.watches.watch_clause(self.ca.clause(cref), cref);
+                    self.watches.watch_clause(self.ca.clause(cr), cr);
                     self.assignment.assign_true(learnt_clause[0], Some(cr));
                 }
             } else {
