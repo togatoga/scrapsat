@@ -199,9 +199,9 @@ impl Solver {
             }
             y.powi(x)
         };
-        let mut curr_restarts = 0;
-        let mut restart_inc = 1.5;
-        let mut restart_first = 100;
+        let curr_restarts = 0;
+        let restart_inc = 1.5;
+        let restart_first = 100;
         while status == LitBool::Undef {
             let rest_base = luby(restart_inc, curr_restarts);
             let nof_conflicts = (rest_base * restart_first as f64) as i32;
@@ -210,7 +210,42 @@ impl Solver {
         status
     }
 
-    pub fn analyze(&mut self, confl: ClauseRef, learnt_clause: &mut Vec<Lit>) -> usize {
+    pub fn analyze(&mut self, mut confl: ClauseRef, learnt_clause: &mut Vec<Lit>) -> usize {
+        let mut path_c = 0;
+        let mut p = None;
+
+        //
+        learnt_clause.clear();
+        let mut index = self.assignment.trail.len() - 1;
+        //let trailZ? = &self.assignment.trail;
+        loop {
+            let c = self.ca.clause_mut(confl);
+            let j = if p.is_none() { 0usize } else { 1usize };
+
+            for &q in c.lits.iter().skip(j) {
+                if !self.assignment.seen(q) && self.assignment.decision_level(q) > 0 {
+                    self.assignment.check(q);
+                    if self.assignment.decision_level(q) >= self.assignment.current_decision_level()
+                    {
+                        path_c += 1;
+                    } else {
+                        learnt_clause.push(q);
+                    }
+                }
+            }
+            // Select next clause to look at
+            while !self.assignment.seen(self.assignment.trail[index]) {
+                index -= 1;
+            }
+            p = Some(self.assignment.trail[index]);
+            confl = self.assignment.reason(p.unwrap()).unwrap();
+            self.assignment.uncheck(p.unwrap());
+            path_c -= 1;
+            if path_c <= 0 {
+                break;
+            }
+        }
+        learnt_clause[0] = p.unwrap().flip();
         0
     }
 

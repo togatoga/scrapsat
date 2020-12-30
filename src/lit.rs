@@ -35,6 +35,12 @@ impl Lit {
         self.x & 1 != 0
     }
 
+    pub fn flip(self) -> Lit {
+        let mut q = self;
+        q.x ^= 1;
+        q
+    }
+
     pub fn is_false(self, val: LitBool) -> bool {
         match val {
             LitBool::False => !self.is_neg(),
@@ -87,7 +93,7 @@ mod test {
         let lit = Lit::new(Var(0), true);
         assert_eq!(lit.x, 1);
         assert_eq!(lit.is_neg(), true);
-        assert_eq!(lit.is_pos(), false);
+
         //not
         assert_eq!(!lit, Lit::new(Var(0), false));
 
@@ -108,12 +114,6 @@ mod test {
         assert_eq!(lit.is_false(LitBool::Undef), false);
 
         let lit = Lit::new(Var(0), false);
-        assert_eq!(lit.is_true(LitBool::True), true);
-        assert_eq!(lit.is_true(LitBool::False), false);
-        assert_eq!(lit.is_true(LitBool::Undef), false);
-
-        assert_eq!(lit.is_false(LitBool::True), false);
-        assert_eq!(lit.is_false(LitBool::False), true);
-        assert_eq!(lit.is_false(LitBool::Undef), false);
+        assert_eq!(lit.flip(), Lit::new(Var(0), true));
     }
 }
