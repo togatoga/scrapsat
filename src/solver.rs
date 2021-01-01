@@ -209,6 +209,7 @@ impl Solver {
                 seq -= 1;
                 x %= size;
             }
+            let _ = seq;
             y.powi(x)
         };
         let curr_restarts = 0;

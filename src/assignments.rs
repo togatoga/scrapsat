@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, BinaryHeap};
+use std::collections::BinaryHeap;
 
 use crate::index_vec::Idx;
 use crate::lit::{Lit, LitBool};
