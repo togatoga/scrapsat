@@ -36,6 +36,17 @@ impl Solver {
         }
     }
 
+    /*_________________________________________________________________________________________________
+    |
+    |  simplify : [void]  ->  [bool]
+    |
+    |  Description:
+    |    Simplify the clause database according to the current top-level assigment. Currently, the only
+    |    thing done here is the removal of satisfied clauses, but more things can be put here.
+    |________________________________________________________________________________________________@*/
+    pub fn simplify(&mut self) -> bool {
+        todo!()
+    }
     // n_var returns the current number of variables.
     pub fn n_var(&self) -> usize {
         self.assignment.n_var()
@@ -214,10 +225,9 @@ impl Solver {
         let mut path_c = 0;
         let mut p = None;
 
-        //
         learnt_clause.clear();
         let mut index = self.assignment.trail.len() - 1;
-        //let trailZ? = &self.assignment.trail;
+
         loop {
             let c = self.ca.clause_mut(confl);
             let j = if p.is_none() { 0usize } else { 1usize };
@@ -246,7 +256,34 @@ impl Solver {
             }
         }
         learnt_clause[0] = p.unwrap().flip();
-        0
+
+        let analyze_clear = learnt_clause.clone();
+        //TODO
+        //Simplify
+
+        // Find correct backtrack level
+        let mut backtrack_level = 0;
+        if learnt_clause.len() == 1 {
+            return backtrack_level;
+        } else {
+            let mut max_idx = 1;
+            let mut min_level = self.assignment.decision_level(learnt_clause[1]);
+            for idx in 2..learnt_clause.len() {
+                if self.assignment.decision_level(learnt_clause[idx]) > min_level {
+                    min_level = self.assignment.decision_level(learnt_clause[idx]);
+                    max_idx = idx;
+                }
+            }
+            // Swap-in this literal at index 1:
+            let temp = learnt_clause[max_idx];
+            learnt_clause[max_idx] = learnt_clause[1];
+            learnt_clause[1] = temp;
+            backtrack_level = min_level;
+        }
+        for elem in analyze_clear {
+            self.assignment.uncheck(elem);
+        }
+        backtrack_level
     }
 
     /*_________________________________________________________________________________________________
@@ -265,6 +302,7 @@ impl Solver {
     fn search(&mut self, nof_conflicts: i32) -> LitBool {
         debug_assert!(self.ok);
         let mut learnt_clause: Vec<Lit> = vec![];
+        let mut conflict_cnt = 0;
         loop {
             let confl = self.propagate();
             if let Some(confl) = confl {
@@ -275,6 +313,9 @@ impl Solver {
                 learnt_clause.clear();
                 //analyze
                 let backtrack_level = self.analyze(confl, &mut learnt_clause);
+                self.assignment.cancel_until(backtrack_level);
+                conflict_cnt += 1;
+
                 //cancelUntil
                 if learnt_clause.len() == 1 {
                     self.assignment.assign_true(learnt_clause[0], None);
@@ -286,6 +327,24 @@ impl Solver {
                 }
             } else {
                 //NO CONFLICT
+                if conflict_cnt >= nof_conflicts {
+                    self.assignment.cancel_until(0);
+                    break;
+                }
+                if self.assignment.current_decision_level() == 0 {
+                    return LitBool::False;
+                }
+                // TODO
+                // Reduce the set of learnt clauses:
+
+                // New variable decision:
+                if let Some(next) = self.assignment.pick_bracnh_lit() {
+                    // Increase decsion level and enqueue 'next'
+                    self.assignment.new_decision_level();
+                    self.assignment.assign_true(next, None);
+                } else {
+                    return LitBool::True;
+                }
             }
         }
 
