@@ -109,7 +109,7 @@ impl Assignment {
     }
 
     pub fn pick_bracnh_lit(&mut self) -> Option<Lit> {
-        while let Some(p) = self.order_heap.clone().pop() {
+        while let Some(p) = self.order_heap.pop() {
             if self.assigns[p.idx()] != LitBool::Undef || !self.decision[p.idx()] {
                 continue;
             }

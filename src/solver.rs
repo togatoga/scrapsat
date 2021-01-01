@@ -76,7 +76,7 @@ impl Solver {
 
             lits
         };
-        println!("{:?}", lits);
+
         match &lits[..] {
             [] => {
                 //UNSAT
@@ -180,7 +180,8 @@ impl Solver {
     }
 
     pub fn solve_limited(&mut self) -> LitBool {
-        if self.ok {
+        //dbg!(self.ok);
+        if !self.ok {
             return LitBool::False;
         }
         let mut status = LitBool::Undef;
@@ -305,6 +306,7 @@ impl Solver {
         let mut conflict_cnt = 0;
         loop {
             let confl = self.propagate();
+            //dbg!(confl);
             if let Some(confl) = confl {
                 //CONFLICT
                 if self.assignment.current_decision_level() == 0 {
@@ -331,9 +333,10 @@ impl Solver {
                     self.assignment.cancel_until(0);
                     break;
                 }
-                if self.assignment.current_decision_level() == 0 {
-                    return LitBool::False;
-                }
+                //dbg!(self.assignment.current_decision_level());
+                // if self.assignment.current_decision_level() == 0 {
+                //     return LitBool::False;
+                // }
                 // TODO
                 // Reduce the set of learnt clauses:
 

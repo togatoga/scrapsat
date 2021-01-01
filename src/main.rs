@@ -16,7 +16,17 @@ fn main() {
     if let Err(e) = scrapsat::dimacs::parse_dimacs_file(&input_cnf_file, &mut solver, None) {
         println!("{}", e);
     } else {
-        let status = solver.solve_limited();
-        eprintln!("{:?}", status);
+        match solver.solve_limited() {
+            scrapsat::lit::LitBool::True => {
+                eprintln!("SAT");
+            },
+            scrapsat::lit::LitBool::False => {
+                eprintln!("UNSAT");
+            },
+            scrapsat::lit::LitBool::Undef => {
+                eprintln!("Undef");
+            }
+        }
+        
     }
 }
