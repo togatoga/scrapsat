@@ -17,7 +17,7 @@ impl VarData {
 
 #[derive(Default)]
 pub struct Assignment {
-    assigns: Vec<LitBool>,       //Var to LitBool: The current assignments.
+    pub assigns: Vec<LitBool>,   //Var to LitBool: The current assignments.
     decision: Vec<bool>, // Declares if a variable is eligible for selection in the decision heuristic.
     var_data: Vec<VarData>, //Var to VarData: Stores reason and level for each variable
     pub trail: Vec<Lit>, //Assignment stack; stores all assignments made in the order they were made.

@@ -5,7 +5,7 @@ use crate::lit::{Lit, LitBool};
 use crate::watcher::{Watcher, Watches};
 
 pub struct Solver {
-    assignment: Assignment,
+    pub assignment: Assignment,
     watches: Watches,
     ca: ClauseAllocator,
     clauses: Vec<ClauseRef>,        //vector of problem clauses

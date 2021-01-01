@@ -19,14 +19,25 @@ fn main() {
         match solver.solve_limited() {
             scrapsat::lit::LitBool::True => {
                 eprintln!("SAT");
-            },
+                for v in 0..solver.n_var() {
+                    let res = match solver.assignment.assigns[v] {
+                        scrapsat::lit::LitBool::True => true,
+                        _ => false,
+                    };
+                    if res {
+                        print!("{} ", v + 1)
+                    } else {
+                        print!("-{} ", v + 1);
+                    }
+                }
+                println!("0");
+            }
             scrapsat::lit::LitBool::False => {
                 eprintln!("UNSAT");
-            },
+            }
             scrapsat::lit::LitBool::Undef => {
                 eprintln!("Undef");
             }
         }
-        
     }
 }
