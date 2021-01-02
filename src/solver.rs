@@ -105,24 +105,27 @@ impl Solver {
         self.watches.clean_all(&self.ca);
         while let Some(p) = self.assignment.pop_front_trail() {
             let not_p = !p;
+            let mut head_idx = 0;
             let mut tail_idx = 0;
             let end_idx = self.watches.get_watches(p).len();
-
-            'next_watch: for idx in 0..end_idx {
+            //eprintln!("{:?}", end_idx);
+            'next_watch: while head_idx < end_idx {
+                assert!(head_idx < end_idx);
+                assert!(tail_idx < end_idx);
                 let (w_cref, w_blocker) = {
-                    let watcher = self.watches.get_watches(p)[idx];
+                    let watcher = self.watches.get_watches(p)[head_idx];
                     (watcher.cref, watcher.blocker)
                 };
                 // Try not to avoid inspecting the clause:
                 if self.assignment.is_assigned_true(w_blocker) {
-                    *self.watches.get_watcher_mut(p, tail_idx) = Watcher {
-                        cref: w_cref,
-                        blocker: w_blocker,
-                    };
+                    *self.watches.get_watcher_mut(p, tail_idx) =
+                        self.watches.get_watches(p)[head_idx];
+                    head_idx += 1;
                     tail_idx += 1;
                     continue 'next_watch;
                 }
                 let clause = self.ca.clause_mut(w_cref);
+                head_idx += 1;
 
                 // Make sure the false literal is data[1]
                 if clause[0] == not_p {
@@ -159,11 +162,10 @@ impl Solver {
                 //Did not find watch -- clause is unit under assignment
                 if self.assignment.is_assigned_false(cw.blocker) {
                     // Copy the remaining watches
-                    let mut tmp_idx = idx;
-                    while tmp_idx < end_idx {
+                    while head_idx < end_idx {
                         *self.watches.get_watcher_mut(p, tail_idx) =
-                            self.watches.get_watches(p)[tmp_idx];
-                        tmp_idx += 1;
+                            self.watches.get_watches(p)[head_idx];
+                        head_idx += 1;
                         tail_idx += 1;
                     }
                     //Cancel the rest of trail.
@@ -223,15 +225,19 @@ impl Solver {
         status
     }
 
-    pub fn analyze(&mut self, mut confl: ClauseRef, learnt_clause: &mut Vec<Lit>) -> usize {
+    pub fn analyze(&mut self, confl: ClauseRef, learnt_clause: &mut Vec<Lit>) -> usize {
         let mut path_c = 0;
         let mut p = None;
-
         learnt_clause.clear();
+        learnt_clause.push(Lit::default()); // (leave room for the asserting literal)
         let mut index = self.assignment.trail.len() - 1;
+        let mut confl = Some(confl);
 
         loop {
-            let c = self.ca.clause_mut(confl);
+            //dbg!(path_c, confl);
+            assert!(confl.is_some());
+
+            let c = self.ca.clause_mut(confl.unwrap());
             let j = if p.is_none() { 0usize } else { 1usize };
 
             for &q in c.lits.iter().skip(j) {
@@ -246,27 +252,29 @@ impl Solver {
                 }
             }
             // Select next clause to look at
+            //dbg!(path_c, index);
+
             while !self.assignment.seen(self.assignment.trail[index]) {
                 index -= 1;
             }
             p = Some(self.assignment.trail[index]);
-            confl = self.assignment.reason(p.unwrap()).unwrap();
+            confl = self.assignment.reason(p.unwrap());
             self.assignment.uncheck(p.unwrap());
             path_c -= 1;
             if path_c <= 0 {
                 break;
             }
         }
-        learnt_clause[0] = p.unwrap().flip();
+        learnt_clause[0] = !p.unwrap();
 
         let analyze_clear = learnt_clause.clone();
         //TODO
         //Simplify
 
         // Find correct backtrack level
-        let mut backtrack_level = 0;
-        if learnt_clause.len() == 1 {
-            return backtrack_level;
+
+        let backtrack_level = if learnt_clause.len() == 1 {
+            0
         } else {
             let mut max_idx = 1;
             let mut min_level = self.assignment.decision_level(learnt_clause[1]);
@@ -278,11 +286,12 @@ impl Solver {
             }
             // Swap-in this literal at index 1:
             learnt_clause.swap(max_idx, 1);
-            backtrack_level = min_level;
-        }
+            min_level
+        };
         for elem in analyze_clear {
             self.assignment.uncheck(elem);
         }
+
         backtrack_level
     }
 
@@ -303,6 +312,7 @@ impl Solver {
         debug_assert!(self.ok);
         let mut learnt_clause: Vec<Lit> = vec![];
         let mut conflict_cnt = 0;
+
         loop {
             let confl = self.propagate();
             //dbg!(confl);
@@ -332,6 +342,8 @@ impl Solver {
                     self.assignment.cancel_until(0);
                     break;
                 }
+                //eprintln!("{}", self.assignment.current_decision_level());
+
                 //dbg!(self.assignment.current_decision_level());
                 // if self.assignment.current_decision_level() == 0 {
                 //     return LitBool::False;

@@ -99,13 +99,13 @@ impl Assignment {
     pub fn seen(&self, p: Lit) -> bool {
         self.seen[p.var().idx()]
     }
+
     pub fn check(&mut self, p: Lit) {
-        assert!(!self.seen[p.var().idx()]);
-        self.seen[p.var().idx()] = false;
-    }
-    pub fn uncheck(&mut self, p: Lit) {
-        assert!(self.seen(p));
         self.seen[p.var().idx()] = true;
+    }
+
+    pub fn uncheck(&mut self, p: Lit) {
+        self.seen[p.var().idx()] = false;
     }
 
     pub fn pick_bracnh_lit(&mut self) -> Option<Lit> {
@@ -128,9 +128,8 @@ impl Assignment {
                 self.order_heap.push(x);
             }
             self.head = self.trail_lim[level];
-            self.trail
-                .truncate(self.trail.len() - self.trail_lim[level]);
-            self.trail_lim.truncate(self.trail_lim.len() - level);
+            self.trail.truncate(self.trail_lim[level]);
+            self.trail_lim.truncate(level);
         }
     }
 
