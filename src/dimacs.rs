@@ -139,9 +139,8 @@ pub fn parse_dimacs_file(
                 }
             } else {
                 let lits = parse_clause(&line, &mut idx)?;
-                match solver.add_clause(&lits) {
-                    AddClauseResult::UnSAT => return Ok(()),
-                    _ => {}
+                if let AddClauseResult::UnSAT = solver.add_clause(&lits) {
+                    return Ok(());
                 }
                 clause_cnt += 1;
             }
@@ -167,7 +166,6 @@ pub fn parse_dimacs_file(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::dimacs::*;
 
     #[test]
     fn test_parse_int() {

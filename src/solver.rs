@@ -270,16 +270,14 @@ impl Solver {
         } else {
             let mut max_idx = 1;
             let mut min_level = self.assignment.decision_level(learnt_clause[1]);
-            for idx in 2..learnt_clause.len() {
-                if self.assignment.decision_level(learnt_clause[idx]) > min_level {
-                    min_level = self.assignment.decision_level(learnt_clause[idx]);
+            for (idx, &p) in learnt_clause.iter().enumerate().skip(2) {
+                if self.assignment.decision_level(p) > min_level {
+                    min_level = self.assignment.decision_level(p);
                     max_idx = idx;
                 }
             }
             // Swap-in this literal at index 1:
-            let temp = learnt_clause[max_idx];
-            learnt_clause[max_idx] = learnt_clause[1];
-            learnt_clause[1] = temp;
+            learnt_clause.swap(max_idx, 1);
             backtrack_level = min_level;
         }
         for elem in analyze_clear {

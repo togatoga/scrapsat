@@ -44,7 +44,7 @@ impl ClauseHeader {
     }
 }
 
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Default)]
 pub struct Clause {
     pub lits: Vec<Lit>,
     pub header: ClauseHeader,
@@ -78,7 +78,7 @@ impl std::ops::IndexMut<usize> for Clause {
 }
 
 pub type ClauseRef = usize;
-#[derive(Ord, PartialOrd, Eq, PartialEq, Debug)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Debug, Default)]
 pub struct ClauseAllocator {
     ra: Vec<Clause>, //NOTE It's better to replace this with raw pointer region allocator to improve the performance
 }
