@@ -25,6 +25,9 @@ impl<T: Idx, V> IdxVec<T, V> {
             _markder: PhantomData,
         }
     }
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
     pub fn push(&mut self, x: V) {
         self.data.push(x);
     }
@@ -124,6 +127,7 @@ mod tests {
                 let x = values[lit];
                 assert_eq!(x, i as i32);
             }
+            assert!(values.len() == 10);
         }
     }
 }
