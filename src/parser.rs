@@ -1,5 +1,3 @@
-use regex::Regex;
-
 use crate::lit::Lit;
 use std::io::BufRead;
 /// CnfData represents parsed data
@@ -27,41 +25,41 @@ pub fn parse_cnf<R: std::io::Read>(input: R) -> std::io::Result<CnfData> {
     let mut num_clause = None;
     let mut clauses = vec![];
 
-    let re = Regex::new(r"p cnf (\d+) (\d+)").expect("bad regex");
     for line in reader.lines() {
         let line = line?;
-        let line = line.trim();
-
-        if num_variable.is_none() && num_clause.is_none() {
-            // p cnf 5 3
-            if let Some(caps) = re.captures(line) {
-                let var = caps.get(1).expect("fail to parse").as_str().parse::<u32>();
-                let clause = caps.get(2).expect("fail to parse").as_str().parse::<u32>();
-                if var.is_ok() && clause.is_ok() {
-                    num_variable = Some(var.expect("bad num variable"));
-                    num_clause = Some(clause.expect("bad num clause"));
-                }
-            }
-        }
-
-        let values: Vec<&str> = line.split_whitespace().collect();
-
+        // trim extra/duplicate whitespaces
+        let values: Vec<_> = line.split_whitespace().into_iter().collect::<Vec<_>>();
         if values.is_empty() || values[0] == "c" {
             // empty or comment
             continue;
         }
+        if num_variable.is_none() && num_clause.is_none() {
+            //p cnf 5 3
+            if values[0] == "p" && values[1] == "cnf" && values.len() == 4 {
+                num_variable = values[2].parse::<u32>().ok();
+                num_clause = values[3].parse::<u32>().ok();
+                continue;
+            }
+        }
 
-        let values: Vec<_> = values
+        let mut ok = true;
+        let lits: Vec<_> = values
             .into_iter()
-            .filter_map(|x| x.parse::<i32>().ok())
+            .filter_map(|x| {
+                if let Ok(x) = x.parse::<i32>() {
+                    Some(x)
+                } else {
+                    ok = false;
+                    None
+                }
+            })
             .take_while(|x| *x != 0)
             .collect();
-
-        if values.is_empty() {
-            // skip an empty line
+        if !ok || lits.is_empty() {
+            // skip an invalid/empty line
             continue;
         }
-        let clause: Vec<Lit> = values.iter().map(|&x| Lit::from(x)).collect();
+        let clause: Vec<Lit> = lits.iter().map(|&x| Lit::from(x)).collect();
         clauses.push(clause);
     }
     Ok(CnfData {

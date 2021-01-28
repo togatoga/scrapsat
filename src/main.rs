@@ -21,6 +21,7 @@ fn main() {
     ) {
         Ok(cnf) => {
             println!("{:?} {:?}", cnf.num_variable, cnf.num_clause);
+            eprintln!("{:?}", cnf);
         }
         Err(e) => {
             eprintln!("{:?}", e);
