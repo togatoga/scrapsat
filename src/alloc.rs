@@ -53,19 +53,16 @@ impl<T: Clone + Copy> RegionAllocator<T> {
             let ptr = if self.cap == 0 {
                 let layout =
                     Layout::from_size_align_unchecked(new_cap * self.elem_size, self.align);
-
-                let ptr = alloc(layout);
-                ptr
+                alloc(layout)
             } else {
                 let old_layout =
                     Layout::from_size_align_unchecked(self.cap * self.elem_size, self.align);
 
-                let ptr = realloc(
+                realloc(
                     self.ptr.as_ptr() as *mut u8,
                     old_layout,
                     new_cap * self.elem_size,
-                );
-                ptr
+                )
             };
             debug_assert!(ptr.is_null(), "Out of the memory");
 
@@ -80,7 +77,7 @@ impl<T: Clone + Copy> RegionAllocator<T> {
         }
 
         unsafe {
-            let ptr_last = self.ptr.as_ptr().offset(self.len as isize);
+            let ptr_last = self.ptr.as_ptr().add(self.len);
             std::ptr::write(ptr_last, elem);
             self.len += 1;
             Id(self.len() - 1, PhantomData)
@@ -98,6 +95,10 @@ impl<T: Clone + Copy> RegionAllocator<T> {
 
     pub fn capacity(&self) -> usize {
         self.cap
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     pub fn subslice(&self, idx: Id<T>, len: usize) -> &[T] {

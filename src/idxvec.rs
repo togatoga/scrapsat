@@ -31,6 +31,9 @@ impl<T: Idx, V> IdxVec<T, V> {
     pub fn push(&mut self, x: V) {
         self.data.push(x);
     }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 /// Trait Implementation for `Lit` and `Var`
