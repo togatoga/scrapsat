@@ -1,4 +1,6 @@
-use crate::{assign::AssignTrail, collections::idxvec::VarVec, types::bool::LitBool};
+use crate::{collections::idxvec::VarVec, types::bool::LitBool};
+
+use super::assign::AssignTrail;
 
 /// SearchData has basic information that is used for searching
 #[derive(Debug, Default)]

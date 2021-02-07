@@ -52,3 +52,13 @@ bitflags! {
         const RELOCATED = 0b00000100;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::ClauseWord;
+
+    #[test]
+    fn test_clause_word() {
+        assert_eq!(std::mem::size_of::<ClauseWord>(), 4);
+    }
+}

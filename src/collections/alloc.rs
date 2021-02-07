@@ -9,11 +9,11 @@ use std::{
 use crate::clause::db;
 /// `Id` is a offset from a `ptr`.
 #[derive(Debug, Clone, Copy)]
-pub struct Id<T>(pub usize, PhantomData<fn(T) -> T>);
+pub struct Id<T>(pub u32, PhantomData<fn(T) -> T>);
 impl<T> std::ops::Add<usize> for Id<T> {
     type Output = Self;
     fn add(self, rhs: usize) -> Self {
-        Id(self.0 + rhs, PhantomData)
+        Id(self.0 + rhs as u32, PhantomData)
     }
 }
 
@@ -81,7 +81,7 @@ impl<T: Clone + Copy> RegionAllocator<T> {
             let ptr_last = self.ptr.as_ptr().add(self.len);
             std::ptr::write(ptr_last, elem);
             self.len += 1;
-            Id(self.len() - 1, PhantomData)
+            Id(self.len() as u32 - 1, PhantomData)
         }
     }
 
@@ -103,18 +103,20 @@ impl<T: Clone + Copy> RegionAllocator<T> {
     }
 
     pub fn subslice(&self, idx: Id<T>, len: usize) -> &[T] {
-        &self.deref()[idx.0..idx.0 + len]
+        let id = idx.0 as usize;
+        &self.deref()[id..id + len]
     }
 
     pub fn subslice_mut(&mut self, idx: Id<T>, len: usize) -> &mut [T] {
-        &mut self.deref_mut()[idx.0..idx.0 + len]
+        let id = idx.0 as usize;
+        &mut self.deref_mut()[id..id + len]
     }
 
     pub fn get(&self, idx: Id<T>) -> &T {
-        &self[idx.0]
+        &self[idx.0 as usize]
     }
     pub fn get_mut(&mut self, idx: Id<T>) -> &mut T {
-        &mut self[idx.0]
+        &mut self[idx.0 as usize]
     }
 }
 
@@ -127,13 +129,13 @@ impl<T: Clone + Copy> Default for RegionAllocator<T> {
 impl<T: Clone + Copy + Debug> Index<Id<T>> for RegionAllocator<T> {
     type Output = T;
     fn index(&self, idx: Id<T>) -> &Self::Output {
-        &self.deref()[idx.0]
+        &self.deref()[idx.0 as usize]
     }
 }
 
 impl<T: Clone + Copy + Debug> IndexMut<Id<T>> for RegionAllocator<T> {
     fn index_mut(&mut self, idx: Id<T>) -> &mut Self::Output {
-        &mut self.deref_mut()[idx.0]
+        &mut self.deref_mut()[idx.0 as usize]
     }
 }
 

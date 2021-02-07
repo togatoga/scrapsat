@@ -1,6 +1,5 @@
 use crate::{
     collections::alloc::{Id, RegionAllocator},
-    data,
     types::lit::Lit,
 };
 
