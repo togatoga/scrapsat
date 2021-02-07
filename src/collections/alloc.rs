@@ -6,7 +6,6 @@ use std::{
     ptr::NonNull,
 };
 
-use crate::clause::db;
 /// `Id` is a offset from a `ptr`.
 #[derive(Debug, Clone, Copy)]
 pub struct Id<T>(pub u32, PhantomData<fn(T) -> T>);
@@ -14,6 +13,16 @@ impl<T> std::ops::Add<usize> for Id<T> {
     type Output = Self;
     fn add(self, rhs: usize) -> Self {
         Id(self.0 + rhs as u32, PhantomData)
+    }
+}
+
+impl<T> Id<T> {
+    pub const UNDEF: Id<T> = Id(std::u32::MAX, PhantomData);
+}
+
+impl<T> Default for Id<T> {
+    fn default() -> Self {
+        Self::UNDEF
     }
 }
 

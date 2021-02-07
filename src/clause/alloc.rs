@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::{
     collections::alloc::{Id, RegionAllocator},
     types::lit::Lit,
