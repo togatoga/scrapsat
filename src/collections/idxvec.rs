@@ -116,7 +116,7 @@ mod tests {
 
             for (i, v) in (0..10).map(Var::from_idx).enumerate() {
                 let x = values[v];
-                assert_eq!(x, i as i32);
+                assert_eq!(x, i as u32);
             }
         }
         {
@@ -129,7 +129,7 @@ mod tests {
 
             for (i, lit) in (0..10).map(Var::from_idx).map(Lit::from).enumerate() {
                 let x = values[lit];
-                assert_eq!(x, i as i32);
+                assert_eq!(x, i as u32);
             }
             assert!(values.len() == 10);
         }

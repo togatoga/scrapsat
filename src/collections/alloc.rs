@@ -163,9 +163,12 @@ impl<T: Clone + Copy> DerefMut for RegionAllocator<T> {
 
 impl<T: Clone + Copy> Drop for RegionAllocator<T> {
     fn drop(&mut self) {
-        unsafe {
-            let layout = Layout::from_size_align_unchecked(self.cap * self.elem_size, self.align);
-            dealloc(self.ptr.as_ptr() as *mut _, layout);
+        if self.capacity() != 0 {
+            unsafe {
+                let layout =
+                    Layout::from_size_align_unchecked(self.cap * self.elem_size, self.align);
+                dealloc(self.ptr.as_ptr() as *mut _, layout);
+            }
         }
     }
 }

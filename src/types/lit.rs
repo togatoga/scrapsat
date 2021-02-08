@@ -1,12 +1,12 @@
-use super::var::Var;
+use super::{bool::LitBool, var::Var};
 
 /// A Literal(`Lit`) is a positive or negative boolean variable(`Var`).
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-pub struct Lit(i32);
+pub struct Lit(u32);
 impl Lit {
     /// A `UNDEF` is a default lit.
-    pub const UNDEF: Lit = Lit(-1);
-    pub fn new(var: i32, positive: bool) -> Lit {
+    pub const UNDEF: Lit = Lit(std::u32::MAX);
+    pub fn new(var: u32, positive: bool) -> Lit {
         Lit(if positive { var << 1 } else { (var << 1) + 1 })
     }
     #[inline]
@@ -36,8 +36,17 @@ impl Lit {
     }
 
     #[inline]
-    pub fn val(&self) -> i32 {
+    pub fn val(&self) -> u32 {
         self.0
+    }
+
+    #[inline]
+    pub fn true_lbool(&self) -> LitBool {
+        if self.pos() {
+            LitBool::True
+        } else {
+            LitBool::False
+        }
     }
 }
 
@@ -61,7 +70,7 @@ impl From<i32> for Lit {
     #[inline]
     fn from(x: i32) -> Self {
         debug_assert!(x != 0, "0 can not be positive or negative");
-        let d = x.abs() as i32 - 1;
+        let d = x.abs() as u32 - 1;
         if x > 0 {
             Lit(d << 1)
         } else {

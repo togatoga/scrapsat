@@ -1,4 +1,8 @@
-use crate::{clause::alloc::CRef, collections::idxvec::VarVec, types::bool::LitBool};
+use crate::{
+    clause::alloc::CRef,
+    collections::idxvec::VarVec,
+    types::{bool::LitBool, lit::Lit, var::Var},
+};
 
 /// VarData has basic information that is used for searching
 pub struct VarData {
@@ -18,9 +22,30 @@ impl VarData {
             reason: VarVec::new(),
         }
     }
+    pub fn num_var(&self) -> usize {
+        self.assigns.len()
+    }
     pub fn new_var(&mut self) {
         self.assigns.push(LitBool::default());
         self.level.push(0);
         self.reason.push(CRef::UNDEF);
+    }
+
+    pub fn assign(&mut self, var: Var, lb: LitBool, level: u32, reason: CRef) {
+        self.assigns[var] = lb;
+        self.level[var] = level;
+        self.reason[var] = reason;
+    }
+
+    pub fn eval(&self, lit: Lit) -> LitBool {
+        LitBool::from(self.assigns[lit.var()] as i8 ^ lit.neg() as i8)
+    }
+
+    pub fn level(&self, var: Var) -> u32 {
+        self.level[var]
+    }
+
+    pub fn reason(&self, var: Var) -> CRef {
+        self.reason[var]
     }
 }

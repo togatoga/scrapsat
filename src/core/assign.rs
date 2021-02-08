@@ -28,8 +28,8 @@ impl AssignTrail {
         self.stack_lim.push(self.stack.len());
     }
     /// Returns the current level of decision.
-    pub fn decision_level(&self) -> usize {
-        self.stack_lim.len()
+    pub fn decision_level(&self) -> u32 {
+        self.stack_lim.len() as u32
     }
 
     /// Returns a boolean whether `peek_head` is within `stack`.

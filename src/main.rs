@@ -1,7 +1,7 @@
 use core::panic;
 
 use clap::{App, Arg};
-use scrapsat::parser;
+use scrapsat::{core::Solver, parser};
 
 fn main() {
     let matches = App::new("scrapsat")
@@ -24,12 +24,15 @@ fn main() {
         )
         .get_matches();
     let input = matches.value_of("input").expect("input is required");
+    let mut solver = Solver::new();
     match parser::parse_cnf(
         std::fs::File::open(input).unwrap_or_else(|_| panic!("can't open file {}", input)),
     ) {
         Ok(cnf) => {
-            println!("{:?} {:?}", cnf.num_variable, cnf.num_clause);
             eprintln!("{:?}", cnf);
+            cnf.clauses.iter().for_each(|lits| {
+                solver.add_clause(lits);
+            });
         }
         Err(e) => {
             eprintln!("{:?}", e);

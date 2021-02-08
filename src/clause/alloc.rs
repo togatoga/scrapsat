@@ -103,7 +103,7 @@ mod tests {
             let mut clause = ca.get_mut(cref);
             assert!(!clause.learnt());
             for (i, lit) in clause.iter().enumerate() {
-                assert_eq!(Lit::new(i as i32, i % 2 == 0), *lit);
+                assert_eq!(Lit::new(i as u32, i % 2 == 0), *lit);
             }
             clause[0] = Lit::new(2048, true);
 
@@ -120,7 +120,7 @@ mod tests {
             let clause = ca.get_mut(cref);
             assert!(clause.learnt());
             for (i, lit) in clause.iter().enumerate() {
-                assert_eq!(Lit::new(i as i32, true), *lit);
+                assert_eq!(Lit::new(i as u32, true), *lit);
             }
             assert_eq!(clause.activity(), 0.0);
         }
