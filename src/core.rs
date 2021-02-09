@@ -1,5 +1,6 @@
 use assign::AssignTrail;
 use data::VarData;
+use watcher::Watches;
 
 use crate::{
     clause::{alloc::CRef, db::ClauseDB},
@@ -8,6 +9,7 @@ use crate::{
 
 mod assign;
 mod data;
+mod watcher;
 
 pub enum SatResult {
     Sat,
@@ -25,6 +27,7 @@ pub struct Solver {
     db: ClauseDB,
     trail: AssignTrail,
     vardata: VarData,
+    watches: Watches,
     result: SatResult,
 }
 
@@ -34,6 +37,7 @@ impl Solver {
             db: ClauseDB::new(),
             trail: AssignTrail::new(),
             vardata: VarData::new(),
+            watches: Watches::new(),
             result: SatResult::Unknown,
         }
     }
@@ -88,6 +92,9 @@ impl Solver {
         self.trail.push(lit);
     }
 
+    pub fn propagate(&mut self) -> CRef {
+        CRef::UNDEF
+    }
     pub fn add_clause(&mut self, lits: &[Lit]) {
         debug_assert!(self.trail.decision_level() == 0);
         lits.iter().for_each(|lit| {
