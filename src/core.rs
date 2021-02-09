@@ -1,6 +1,6 @@
 use assign::AssignTrail;
 use data::VarData;
-use watcher::Watches;
+use watcher::{Watch, Watchers};
 
 use crate::{
     clause::{alloc::CRef, db::ClauseDB},
@@ -25,9 +25,8 @@ impl Default for SatResult {
 
 pub struct Solver {
     db: ClauseDB,
-    trail: AssignTrail,
     vardata: VarData,
-    watches: Watches,
+    watches: Watchers,
     result: SatResult,
 }
 
@@ -35,9 +34,8 @@ impl Solver {
     pub fn new() -> Solver {
         Solver {
             db: ClauseDB::new(),
-            trail: AssignTrail::new(),
             vardata: VarData::new(),
-            watches: Watches::new(),
+            watches: Watchers::new(),
             result: SatResult::Unknown,
         }
     }
@@ -81,22 +79,61 @@ impl Solver {
         (false, lits)
     }
 
-    fn enqueue(&mut self, lit: Lit, reason: CRef) {
-        debug_assert!(self.vardata.eval(lit) == LitBool::UnDef);
-        self.vardata.assign(
-            lit.var(),
-            lit.true_lbool(),
-            self.trail.decision_level(),
-            reason,
-        );
-        self.trail.push(lit);
-    }
-
     pub fn propagate(&mut self) -> CRef {
+        while self.vardata.trail.peekable() {
+            let p = self.vardata.trail.peek();
+            self.vardata.trail.advance();
+            let mut watchers_ptr = self.watches.as_mut_ptr();
+            let mut ws = self.watches.lookup_mut(p);
+            let mut idx = 0;
+
+            'next_clause: while idx < ws.len() {
+                let blocker = ws[idx].blocker;
+                if self.vardata.eval(blocker) == LitBool::True {
+                    idx += 1;
+                    continue;
+                }
+                let cref = ws[idx].cref;
+                let mut clause = self.db.get_mut(cref);
+                debug_assert!(!clause.deleted());
+                debug_assert!(clause[0] == !p || clause[1] == !p);
+                // make sure that clause[1] is a false literal.
+                if clause[0] == !p {
+                    clause.swap(0, 1);
+                }
+                let first = clause[0];
+                let w = Watch::new(cref, first);
+                // already satisfied
+                if first != blocker && self.vardata.eval(first) == LitBool::True {
+                    debug_assert!(first != clause[1]);
+                    ws[idx] = w;
+                    idx += 1;
+                    continue 'next_clause;
+                }
+
+                for k in 2..clause.len() {
+                    let lit = clause[k];
+                    if self.vardata.eval(lit) != LitBool::False {
+                        clause.swap(1, k);
+                        ws.swap_remove(idx);
+                        unsafe { &mut (*watchers_ptr)[!clause[1]].push(w) };
+                        continue 'next_clause;
+                    }
+                }
+                ws[idx] = w;
+                if self.vardata.eval(first) == LitBool::False {
+                    return cref;
+                } else {
+                    self.vardata.enqueue(first, cref);
+                }
+                idx += 1;
+            }
+        }
+
         CRef::UNDEF
     }
     pub fn add_clause(&mut self, lits: &[Lit]) {
-        debug_assert!(self.trail.decision_level() == 0);
+        debug_assert!(self.vardata.trail.decision_level() == 0);
         lits.iter().for_each(|lit| {
             while lit.var().val() >= self.vardata.num_var() as u32 {
                 self.vardata.new_var();
@@ -117,7 +154,7 @@ impl Solver {
                 self.result = SatResult::Unsat;
                 return;
             }
-            self.enqueue(lits[0], CRef::UNDEF);
+            self.vardata.enqueue(lits[0], CRef::UNDEF);
         } else {
         }
     }

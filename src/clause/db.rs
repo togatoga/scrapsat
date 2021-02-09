@@ -1,6 +1,9 @@
 use crate::types::lit::Lit;
 
-use super::alloc::{CRef, ClauseAllocator};
+use super::{
+    alloc::{CRef, ClauseAllocator},
+    Clause,
+};
 
 pub struct ClauseDB {
     ca: ClauseAllocator,
@@ -17,6 +20,10 @@ impl ClauseDB {
             clauses: Vec::new(),
             learnts: Vec::new(),
         }
+    }
+
+    pub fn get_mut(&mut self, cref: CRef) -> Clause {
+        self.ca.get_mut(cref)
     }
 
     pub fn alloc(&mut self, lits: &[Lit], learnt: bool) -> CRef {

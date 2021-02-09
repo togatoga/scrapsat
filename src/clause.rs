@@ -43,33 +43,39 @@ pub struct Clause<'a> {
 }
 
 impl<'a> Clause<'a> {
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.data.len() as usize
     }
-    fn learnt(&self) -> bool {
+    pub fn learnt(&self) -> bool {
         self.flags.contains(Flags::LEARNT)
     }
-    fn activity(&self) -> f32 {
+    pub fn activity(&self) -> f32 {
         self.flags.contains(Flags::LEARNT);
         unsafe { self.extra.as_ref().expect("No extra").activity }
     }
-    fn relocated(&self) -> bool {
+    pub fn deleted(&self) -> bool {
+        self.flags.contains(Flags::DELTED)
+    }
+    pub fn relocated(&self) -> bool {
         self.flags.contains(Flags::RELOCATED)
     }
-    fn relocate(&mut self, cref: CRef) {
+    pub fn relocate(&mut self, cref: CRef) {
         debug_assert!(!self.flags.contains(Flags::RELOCATED));
         self.flags.insert(Flags::RELOCATED);
         self.data[0].relocation = cref;
     }
-    fn relocation(&self) -> CRef {
+    pub fn swap(&mut self, a: usize, b: usize) {
+        self.data.swap(a, b);
+    }
+    pub fn relocation(&self) -> CRef {
         debug_assert!(self.flags.contains(Flags::RELOCATED));
         unsafe { self.data[0].relocation }
     }
-    fn iter(&self) -> ClauseIter {
+    pub fn iter(&self) -> ClauseIter {
         debug_assert!(!self.flags.contains(Flags::RELOCATED));
         ClauseIter(self.data.iter())
     }
-    fn iter_mut(&mut self) -> ClauseIterMut {
+    pub fn iter_mut(&mut self) -> ClauseIterMut {
         debug_assert!(!self.flags.contains(Flags::RELOCATED));
         ClauseIterMut(self.data.iter_mut())
     }

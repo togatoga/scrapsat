@@ -4,6 +4,8 @@ use crate::{
     types::{bool::LitBool, lit::Lit, var::Var},
 };
 
+use super::assign::AssignTrail;
+
 /// VarData has basic information that is used for searching
 pub struct VarData {
     /// assignments for each variable
@@ -12,6 +14,8 @@ pub struct VarData {
     level: VarVec<u32>,
     /// CRef points a clause forces to assign a var.
     reason: VarVec<CRef>,
+
+    pub trail: AssignTrail,
 }
 
 impl VarData {
@@ -20,6 +24,7 @@ impl VarData {
             assigns: VarVec::new(),
             level: VarVec::new(),
             reason: VarVec::new(),
+            trail: AssignTrail::new(),
         }
     }
     pub fn num_var(&self) -> usize {
@@ -31,7 +36,7 @@ impl VarData {
         self.reason.push(CRef::UNDEF);
     }
 
-    pub fn assign(&mut self, var: Var, lb: LitBool, level: u32, reason: CRef) {
+    fn assign(&mut self, var: Var, lb: LitBool, level: u32, reason: CRef) {
         self.assigns[var] = lb;
         self.level[var] = level;
         self.reason[var] = reason;
@@ -47,5 +52,16 @@ impl VarData {
 
     pub fn reason(&self, var: Var) -> CRef {
         self.reason[var]
+    }
+
+    pub fn enqueue(&mut self, lit: Lit, reason: CRef) {
+        debug_assert!(self.eval(lit) == LitBool::UnDef);
+        self.assign(
+            lit.var(),
+            lit.true_lbool(),
+            self.trail.decision_level(),
+            reason,
+        );
+        self.trail.push(lit);
     }
 }
