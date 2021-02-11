@@ -13,6 +13,16 @@ pub struct ClauseDB {
     learnts: Vec<CRef>,
 }
 
+impl Default for ClauseDB {
+    fn default() -> Self {
+        ClauseDB {
+            ca: ClauseAllocator::default(),
+            clauses: Vec::default(),
+            learnts: Vec::default(),
+        }
+    }
+}
+
 impl ClauseDB {
     pub fn new() -> ClauseDB {
         ClauseDB {

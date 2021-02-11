@@ -54,10 +54,6 @@ impl<T: Idx, V> DerefMut for IdxVec<T, V> {
 /// Lit
 impl Idx for Lit {
     fn idx(&self) -> usize {
-        debug_assert!(
-            self.val() >= 0,
-            format!("A value is negative {}", self.val())
-        );
         self.val() as usize
     }
 }
@@ -77,10 +73,6 @@ impl<Lit: Idx, V> IndexMut<Lit> for LitVec<V> {
 
 impl Idx for Var {
     fn idx(&self) -> usize {
-        debug_assert!(
-            self.val() >= 0,
-            format!("A value is negative {}", self.val())
-        );
         self.val() as usize
     }
 }

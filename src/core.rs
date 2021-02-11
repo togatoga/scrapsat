@@ -1,4 +1,3 @@
-use assign::AssignTrail;
 use data::VarData;
 use watcher::{Watch, Watchers};
 
@@ -28,6 +27,17 @@ pub struct Solver {
     vardata: VarData,
     watches: Watchers,
     result: SatResult,
+}
+
+impl Default for Solver {
+    fn default() -> Self {
+        Solver {
+            db: ClauseDB::new(),
+            vardata: VarData::new(),
+            watches: Watchers::new(),
+            result: SatResult::Unknown,
+        }
+    }
 }
 
 impl Solver {
@@ -83,8 +93,8 @@ impl Solver {
         while self.vardata.trail.peekable() {
             let p = self.vardata.trail.peek();
             self.vardata.trail.advance();
-            let mut watchers_ptr = self.watches.as_mut_ptr();
-            let mut ws = self.watches.lookup_mut(p);
+            let watchers_ptr = self.watches.as_mut_ptr();
+            let ws = self.watches.lookup_mut(p);
             let mut idx = 0;
 
             'next_clause: while idx < ws.len() {
@@ -148,7 +158,6 @@ impl Solver {
 
         if lits.is_empty() {
             self.result = SatResult::Unsat;
-            return;
         } else if lits.len() == 1 {
             if self.vardata.eval(lits[0]) == LitBool::False {
                 self.result = SatResult::Unsat;

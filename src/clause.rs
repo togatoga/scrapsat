@@ -46,6 +46,11 @@ impl<'a> Clause<'a> {
     pub fn len(&self) -> usize {
         self.data.len() as usize
     }
+    #[allow(dead_code)]
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+
     pub fn learnt(&self) -> bool {
         self.flags.contains(Flags::LEARNT)
     }

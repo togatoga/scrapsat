@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use crate::{
     collections::alloc::{Id, RegionAllocator},
     types::lit::Lit,
@@ -15,6 +13,15 @@ pub type CRef = Id<ClauseWord>;
 pub struct ClauseAllocator {
     ra: RegionAllocator<ClauseWord>,
     wasted: u32,
+}
+
+impl Default for ClauseAllocator {
+    fn default() -> Self {
+        ClauseAllocator {
+            ra: RegionAllocator::new(),
+            wasted: 0,
+        }
+    }
 }
 
 impl ClauseAllocator {
@@ -70,9 +77,8 @@ impl ClauseAllocator {
             1 + 1 + len_clause
         };
         let slice = self.ra.subslice_mut(cref, len as usize);
-        //let flags = unsafe { &mut slice.get_unchecked_mut(0).flags };
         let (flag_slice, slice) = slice.split_at_mut(1);
-        let (len_slice, slice) = slice.split_at_mut(1);
+        let (_len_slice, slice) = slice.split_at_mut(1);
         let (data_slice, extra_slice) = slice.split_at_mut(len_clause as usize);
 
         //eprintln!("{:?}", unsafe {len_slice[0].len});
