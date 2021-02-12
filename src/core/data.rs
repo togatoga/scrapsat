@@ -1,10 +1,12 @@
+use analyzer::Analyzer;
+
 use crate::{
     clause::alloc::CRef,
     collections::idxvec::VarVec,
     types::{bool::LitBool, lit::Lit, var::Var},
 };
 
-use super::assign::AssignTrail;
+use super::{analyzer, assign::AssignTrail, watcher::Watchers};
 
 /// VarData has basic information that is used for searching
 pub struct VarData {
@@ -14,7 +16,8 @@ pub struct VarData {
     level: VarVec<u32>,
     /// CRef points a clause forces to assign a var.
     reason: VarVec<CRef>,
-
+    /// a bunch of data is used to analyze conflicts.
+    pub analyzer: Analyzer,
     pub trail: AssignTrail,
 }
 
@@ -24,6 +27,7 @@ impl VarData {
             assigns: VarVec::new(),
             level: VarVec::new(),
             reason: VarVec::new(),
+            analyzer: Analyzer::new(),
             trail: AssignTrail::new(),
         }
     }
@@ -34,6 +38,13 @@ impl VarData {
         self.assigns.push(LitBool::default());
         self.level.push(0);
         self.reason.push(CRef::UNDEF);
+        self.analyzer.seen.push(false);
+    }
+
+    pub fn cancel_trail_until(&mut self, backtrack_level: u32) {
+        if self.trail.decision_level() >= backtrack_level {
+            return;
+        }
     }
 
     fn assign(&mut self, var: Var, lb: LitBool, level: u32, reason: CRef) {

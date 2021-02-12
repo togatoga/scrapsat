@@ -3,7 +3,7 @@ use crate::types::lit::Lit;
 #[derive(Debug, Default)]
 pub struct AssignTrail {
     /// Stores all assignments made in the order they made.
-    stack: Vec<Lit>,
+    pub stack: Vec<Lit>,
     /// Separator indices for different decision levels in `stack`
     /// e.g. For `stack`,
     /// 0..stack_lim[0] is all assignments at 0 level

@@ -6,6 +6,7 @@ use crate::{
     types::{bool::LitBool, lit::Lit},
 };
 
+mod analyzer;
 mod assign;
 mod data;
 mod watcher;
@@ -26,6 +27,7 @@ impl Default for SatResult {
 pub struct Solver {
     db: ClauseDB,
     vardata: VarData,
+    /// check clauses if a propagation or conflict happens.
     watches: Watchers,
     result: SatResult,
 }
@@ -142,11 +144,16 @@ impl Solver {
         }
         CRef::UNDEF
     }
+    fn new_var(&mut self) {
+        self.vardata.new_var();
+        self.watches.new_var();
+    }
+
     pub fn add_clause(&mut self, lits: &[Lit]) {
         debug_assert!(self.vardata.trail.decision_level() == 0);
         lits.iter().for_each(|lit| {
             while lit.var().val() >= self.vardata.num_var() as u32 {
-                self.vardata.new_var();
+                self.new_var();
             }
         });
 
@@ -172,6 +179,94 @@ impl Solver {
             self.watches.watch(&lits, cref);
         }
     }
+    fn analyze(&mut self, confl: CRef) -> u32 {
+        debug_assert!(confl != CRef::UNDEF);
+        let decision_level = self.vardata.trail.decision_level();
+        self.vardata.analyzer.learnt_clause.clear();
+        self.vardata.analyzer.learnt_clause.push(Lit::default());
+
+        let mut counter = 0;
+        {
+            let clause = self.db.get_mut(confl);
+            debug_assert!(!clause.deleted());
+            for &p in clause.iter() {
+                debug_assert!(self.vardata.eval(p) != LitBool::UnDef);
+                let var = p.var();
+                self.vardata.analyzer.seen[var] = true;
+                if self.vardata.level(var) < decision_level {
+                    self.vardata.analyzer.learnt_clause.push(p);
+                } else {
+                    counter += 1;
+                }
+            }
+        }
+        // Traverse an implication graph to 1-UIP(unique implication point)
+        let first_uip = {
+            let mut p = Lit::UNDEF;
+            for &lit in self.vardata.trail.stack.iter().rev() {
+                // skip a variable that isn't checked.
+                if !self.vardata.analyzer.seen[lit.var()] {
+                    continue;
+                }
+                self.vardata.analyzer.seen[lit.var()] = true;
+                counter -= 1;
+                if counter <= 0 {
+                    p = lit;
+                    break;
+                }
+                let reason = self.vardata.reason(lit.var());
+                let clause = self.db.get_mut(reason);
+                for &q in clause.iter().skip(1) {
+                    if self.vardata.analyzer.seen[q.var()] {
+                        continue;
+                    }
+                    self.vardata.analyzer.seen[q.var()] = true;
+                    if self.vardata.level(q.var()) < decision_level {
+                        self.vardata.analyzer.learnt_clause.push(q);
+                    } else {
+                        counter += 1;
+                    }
+                }
+            }
+            p
+        };
+        debug_assert!(first_uip != Lit::UNDEF);
+        self.vardata.analyzer.learnt_clause[0] = !first_uip;
+        self.vardata
+            .analyzer
+            .analyze_toclear
+            .clone_from(&self.vardata.analyzer.learnt_clause);
+
+        let backtrack_level = if self.vardata.analyzer.learnt_clause.len() == 1 {
+            0
+        } else {
+            let mut idx = 1;
+            let mut max_level = self
+                .vardata
+                .level(self.vardata.analyzer.learnt_clause[1].var());
+            for (i, lit) in self
+                .vardata
+                .analyzer
+                .learnt_clause
+                .iter()
+                .enumerate()
+                .skip(2)
+            {
+                if self.vardata.level(lit.var()) > max_level {
+                    max_level = self.vardata.level(lit.var());
+                    idx = i;
+                }
+            }
+            self.vardata.analyzer.learnt_clause.swap(1, idx);
+            max_level
+        };
+
+        // clear seen
+        for lit in self.vardata.analyzer.analyze_toclear.iter() {
+            self.vardata.analyzer.seen[lit.var()] = false;
+        }
+        backtrack_level
+    }
     fn search(&mut self) -> SatResult {
         loop {
             let confl = self.propagate();
@@ -181,6 +276,8 @@ impl Solver {
                     self.result = SatResult::Unsat;
                     return SatResult::Unsat;
                 }
+                let backtrack_level = self.analyze(confl);
+                self.vardata.cancel_trail_until(backtrack_level);
             } else {
                 // No conflict
             }

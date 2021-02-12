@@ -24,6 +24,11 @@ impl Watchers {
         }
     }
 
+    pub fn new_var(&mut self) {
+        self.watchers.push(Vec::new());
+        self.watchers.push(Vec::new());
+    }
+
     pub fn as_mut_ptr(&mut self) -> *mut LitVec<Vec<Watch>> {
         &mut self.watchers as *mut LitVec<Vec<Watch>>
     }
