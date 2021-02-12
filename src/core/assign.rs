@@ -8,9 +8,9 @@ pub struct AssignTrail {
     /// e.g. For `stack`,
     /// 0..stack_lim[0] is all assignments at 0 level
     /// stack_lim[0]..stack_lim[1] is all assignments  at 1 level
-    stack_lim: Vec<usize>,
+    pub stack_lim: Vec<usize>,
     /// Head of `stack`
-    peek_head: usize,
+    pub peek_head: usize,
 }
 
 impl AssignTrail {

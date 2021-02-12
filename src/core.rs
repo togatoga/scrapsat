@@ -277,6 +277,9 @@ impl Solver {
                     return SatResult::Unsat;
                 }
                 let backtrack_level = self.analyze(confl);
+                let learnt_clause = &self.vardata.analyzer.learnt_clause;
+                let cref = self.db.alloc(&learnt_clause, true);
+                self.watches.watch(&learnt_clause, cref);
                 self.vardata.cancel_trail_until(backtrack_level);
             } else {
                 // No conflict
