@@ -10,6 +10,7 @@ mod assign;
 mod data;
 mod watcher;
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum SatResult {
     Sat,
     Unsat,
@@ -139,7 +140,6 @@ impl Solver {
                 idx += 1;
             }
         }
-
         CRef::UNDEF
     }
     pub fn add_clause(&mut self, lits: &[Lit]) {
@@ -164,7 +164,36 @@ impl Solver {
                 return;
             }
             self.vardata.enqueue(lits[0], CRef::UNDEF);
+            if self.propagate() != CRef::UNDEF {
+                self.result = SatResult::Unsat;
+            }
         } else {
+            let cref = self.db.alloc(&lits, false);
+            self.watches.watch(&lits, cref);
         }
+    }
+    fn search(&mut self) -> SatResult {
+        loop {
+            let confl = self.propagate();
+            // conflict
+            if confl != CRef::UNDEF {
+                if self.vardata.trail.decision_level() == 0 {
+                    self.result = SatResult::Unsat;
+                    return SatResult::Unsat;
+                }
+            } else {
+                // No conflict
+            }
+        }
+    }
+    pub fn solve(&mut self) -> SatResult {
+        if self.result != SatResult::Unknown {
+            return self.result;
+        }
+        let mut result = SatResult::Unknown;
+        while result == SatResult::Unknown {
+            result = self.search();
+        }
+        result
     }
 }

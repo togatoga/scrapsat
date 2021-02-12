@@ -7,7 +7,7 @@ use std::{
 };
 
 /// `Id` is a offset from a `ptr`.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Id<T>(pub u32, PhantomData<fn(T) -> T>);
 impl<T> std::ops::Add<usize> for Id<T> {
     type Output = Self;

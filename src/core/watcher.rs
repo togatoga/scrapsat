@@ -23,9 +23,18 @@ impl Watchers {
             watchers: LitVec::new(),
         }
     }
+
     pub fn as_mut_ptr(&mut self) -> *mut LitVec<Vec<Watch>> {
         &mut self.watchers as *mut LitVec<Vec<Watch>>
     }
+
+    pub fn watch(&mut self, lits: &[Lit], cref: CRef) {
+        debug_assert!(lits.len() >= 2);
+        let (c0, c1) = (lits[0], lits[1]);
+        self.watchers[!c0].push(Watch::new(cref, c1));
+        self.watchers[!c1].push(Watch::new(cref, c0));
+    }
+
     pub fn lookup_mut(&mut self, lit: Lit) -> &mut Vec<Watch> {
         &mut self.watchers[lit]
     }

@@ -9,6 +9,11 @@ use super::{
 };
 
 pub type CRef = Id<ClauseWord>;
+impl PartialEq for CRef {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
 
 pub struct ClauseAllocator {
     ra: RegionAllocator<ClauseWord>,
