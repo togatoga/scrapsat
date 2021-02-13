@@ -197,6 +197,7 @@ impl Solver {
                 debug_assert!(self.vardata.eval(p) != LitBool::UnDef);
                 let var = p.var();
                 self.vardata.analyzer.seen[var] = true;
+                self.vardata.order_heap.bump_activity(var);
                 if self.vardata.level(var) < decision_level {
                     self.vardata.analyzer.learnt_clause.push(p);
                 } else {
@@ -225,6 +226,7 @@ impl Solver {
                         continue;
                     }
                     self.vardata.analyzer.seen[q.var()] = true;
+                    self.vardata.order_heap.bump_activity(q.var());
                     if self.vardata.level(q.var()) < decision_level {
                         self.vardata.analyzer.learnt_clause.push(q);
                     } else {
@@ -294,6 +296,7 @@ impl Solver {
                     self.vardata
                         .enqueue(self.vardata.analyzer.learnt_clause[0], cref);
                 }
+                self.vardata.order_heap.decay();
             } else {
                 // No conflict
                 loop {

@@ -6,7 +6,10 @@ use super::idxvec::VarVec;
 pub struct Heap {
     heap: Vec<Var>,
     indices: VarVec<Option<usize>>,
-    activity: VarVec<f64>,
+    pub activity: VarVec<f64>,
+    // Parameters for activity
+    bump_inc: f64,
+    decay_ratio: f64,
 }
 impl Default for Heap {
     fn default() -> Self {
@@ -14,17 +17,15 @@ impl Default for Heap {
             heap: Vec::default(),
             indices: VarVec::new(),
             activity: VarVec::new(),
+            bump_inc: 1.0,
+            decay_ratio: 0.95,
         }
     }
 }
 
 impl Heap {
     pub fn new() -> Heap {
-        Heap {
-            heap: Vec::new(),
-            indices: VarVec::new(),
-            activity: VarVec::new(),
-        }
+        Heap::default()
     }
 
     fn gt(&self, left: Var, right: Var) -> bool {
@@ -49,7 +50,7 @@ impl Heap {
             self.down(idx);
         }
     }
-    fn up(&mut self, i: usize) {
+    pub fn up(&mut self, i: usize) {
         if i == 0 {
             return;
         }
@@ -125,7 +126,26 @@ impl Heap {
         self.up(self.indices[v].expect("No index"));
     }
 
-    fn in_heap(&mut self, v: Var) -> bool {
+    pub fn in_heap(&mut self, v: Var) -> bool {
         (v.0 as usize) < self.indices.len() && self.indices[v].is_some()
+    }
+
+    pub fn decay(&mut self) {
+        self.bump_inc /= self.decay_ratio;
+    }
+    
+    pub fn bump_activity(&mut self, v: Var) {
+        self.activity[v] += self.bump_inc;
+
+        if self.activity[v] >= 1e100 {
+            for act in self.activity.iter_mut() {
+                *act *= 1e-100;
+            }
+            self.bump_inc *= 1e-100;
+        }
+        if self.in_heap(v) {
+            let idx = self.indices[v].expect("No index");
+            self.up(idx);
+        }
     }
 }
