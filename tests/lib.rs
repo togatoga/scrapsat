@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
 
+    use std::fmt::format;
+
     use scrapsat::types::lit::Lit;
     use scrapsat::{
         core::{SatResult, Solver},
@@ -106,21 +108,23 @@ mod tests {
                     eprintln!("Skip!!(TIME LIMIT EXCEEDED): {}", path_str);
                     continue;
                 }
-                if result != expected {
-                    eprintln!(
+
+                assert!(
+                    result == expected,
+                    format!(
                         "cnf: {}, Result: {:?} Expected: {:?}",
                         path_str, result, expected
-                    );
-                    assert!(false);
-                }
+                    )
+                );
+
                 if result == SatResult::Sat {
-                    if !sat_model_check(&cnf.clauses, &solver.models) {
-                        eprintln!(
-                            "Assignments are wrong!! cnf: {}, Result: {:?} Expected: {:?}",
+                    assert!(
+                        sat_model_check(&cnf.clauses, &solver.models),
+                        format!(
+                            "The models are wrong!! cnf: {}, Result: {:?} Expected: {:?}",
                             path_str, result, expected
-                        );
-                        assert!(false);
-                    }
+                        )
+                    );
                 }
             }
         }
