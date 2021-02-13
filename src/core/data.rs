@@ -12,7 +12,6 @@ use super::{analyzer, assign::AssignTrail};
 pub struct VarData {
     /// assignments for each variable
     assigns: VarVec<LitBool>,
-
     /// decision level
     level: VarVec<u32>,
     /// CRef points a clause forces to assign a var.
@@ -77,9 +76,14 @@ impl VarData {
         self.reason[var] = reason;
     }
 
+    pub fn lbool(&self, var: Var) -> LitBool {
+        self.assigns[var]
+    }
+
     pub fn define(&self, var: Var) -> bool {
         self.assigns[var] != LitBool::UnDef
     }
+
     pub fn eval(&self, lit: Lit) -> LitBool {
         LitBool::from(self.assigns[lit.var()] as i8 ^ lit.neg() as i8)
     }

@@ -10,3 +10,6 @@ edition = "2018"
 clap = "2.33.3"
 regex ="1"
 bitflags = "1.2"
+
+[dev-dependencies]
+walkdir = "2"

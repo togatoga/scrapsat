@@ -3,7 +3,7 @@ use watcher::{Watch, Watchers};
 
 use crate::{
     clause::{alloc::CRef, db::ClauseDB},
-    types::{bool::LitBool, lit::Lit},
+    types::{bool::LitBool, lit::Lit, var},
 };
 
 mod analyzer;
@@ -30,6 +30,7 @@ pub struct Solver {
     /// check clauses if a propagation or conflict happens.
     watches: Watchers,
     result: SatResult,
+    pub models: Vec<LitBool>,
 }
 
 impl Default for Solver {
@@ -39,6 +40,7 @@ impl Default for Solver {
             vardata: VarData::new(),
             watches: Watchers::new(),
             result: SatResult::Unknown,
+            models: Vec::new(),
         }
     }
 }
@@ -50,6 +52,7 @@ impl Solver {
             vardata: VarData::new(),
             watches: Watchers::new(),
             result: SatResult::Unknown,
+            models: Vec::new(),
         }
     }
 
@@ -319,6 +322,13 @@ impl Solver {
         let mut result = SatResult::Unknown;
         while result == SatResult::Unknown {
             result = self.search();
+        }
+
+        if result == SatResult::Sat {
+            self.models.resize(self.vardata.num_var(), LitBool::UnDef);
+            for v in (0..self.vardata.num_var()).map(var::Var::from_idx) {
+                self.models[v.val() as usize] = self.vardata.lbool(v);
+            }
         }
         result
     }
