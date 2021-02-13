@@ -2,6 +2,7 @@ use core::panic;
 
 use clap::{App, Arg};
 use scrapsat::{core::Solver, parser};
+use signal_hook::{consts::SIGINT, iterator::Signals};
 
 fn main() {
     let matches = App::new("scrapsat")
@@ -32,6 +33,16 @@ fn main() {
             cnf.clauses.iter().for_each(|lits| {
                 solver.add_clause(lits);
             });
+
+            let sender = solver.sender.clone();
+            let mut signals = Signals::new(&[SIGINT]).expect("togatoga");
+            std::thread::spawn(move || {
+                for sig in signals.forever() {
+                    eprintln!("{:?}", sig);
+                    sender.send(0).expect("failed to send");
+                }
+            });
+
             match solver.solve() {
                 scrapsat::core::SatResult::Sat => {
                     println!("c SAT");

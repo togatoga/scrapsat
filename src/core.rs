@@ -1,5 +1,8 @@
+use std::sync::mpsc::{self, Receiver};
+
 use data::VarData;
 use luby::LubyRestart;
+use mpsc::Sender;
 use watcher::{Watch, Watchers};
 
 use crate::{
@@ -33,17 +36,24 @@ pub struct Solver {
     watches: Watchers,
     result: SatResult,
     luby: LubyRestart,
+    pub sender: Sender<i32>,
+    pub receiver: Receiver<i32>,
+    pub interreupt: bool,
     pub models: Vec<LitBool>,
 }
 
 impl Default for Solver {
     fn default() -> Self {
+        let (sender, receiver) = mpsc::channel();
         Solver {
             db: ClauseDB::new(),
             vardata: VarData::new(),
             watches: Watchers::new(),
             result: SatResult::Unknown,
             luby: LubyRestart::default(),
+            sender,
+            receiver,
+            interreupt: false,
             models: Vec::new(),
         }
     }
@@ -273,6 +283,20 @@ impl Solver {
         }
         backtrack_level
     }
+
+    fn interreupt(&mut self) -> bool {
+        if self.interreupt {
+            return true;
+        }
+        match self.receiver.try_recv() {
+            Ok(res) => {
+                eprintln!("interrpt: {}", res);
+                self.interreupt = true;
+                true
+            }
+            _ => false,
+        }
+    }
     fn search(&mut self, conflict_limit: u32) -> SatResult {
         let mut conflict_cnt = 0;
         loop {
@@ -303,7 +327,7 @@ impl Solver {
                 // No conflict
                 loop {
                     // restart
-                    if conflict_cnt >= conflict_limit {
+                    if self.interreupt() || conflict_cnt >= conflict_limit {
                         self.vardata.cancel_trail_until(0);
                         return SatResult::Unknown;
                     }
@@ -337,6 +361,9 @@ impl Solver {
         while result == SatResult::Unknown {
             let conflict_limit = self.luby.seq(restart_cnt) as u32;
             result = self.search(conflict_limit);
+            if self.interreupt() {
+                break;
+            }
             restart_cnt += 1;
         }
 
