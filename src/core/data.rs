@@ -71,6 +71,9 @@ impl VarData {
     }
 
     fn assign(&mut self, var: Var, lb: LitBool, level: u32, reason: CRef) {
+        debug_assert!(!self.define(var));
+        debug_assert!(self.level(var) == 0);
+        debug_assert!(self.reason[var] == CRef::UNDEF);
         self.assigns[var] = lb;
         self.level[var] = level;
         self.reason[var] = reason;

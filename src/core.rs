@@ -183,6 +183,7 @@ impl Solver {
         }
     }
     fn analyze(&mut self, confl: CRef) -> u32 {
+        debug_assert!(!self.vardata.analyzer.seen.iter().any(|x| *x));
         debug_assert!(confl != CRef::UNDEF);
         let decision_level = self.vardata.trail.decision_level();
         self.vardata.analyzer.learnt_clause.clear();
@@ -211,7 +212,7 @@ impl Solver {
                 if !self.vardata.analyzer.seen[lit.var()] {
                     continue;
                 }
-                self.vardata.analyzer.seen[lit.var()] = true;
+                self.vardata.analyzer.seen[lit.var()] = false;
                 counter -= 1;
                 if counter <= 0 {
                     p = lit;
@@ -280,6 +281,7 @@ impl Solver {
                     return SatResult::Unsat;
                 }
                 let backtrack_level = self.analyze(confl);
+                //eprintln!("{} {}", backtrack_level, self.vardata.analyzer.learnt_clause.len());
                 self.vardata.cancel_trail_until(backtrack_level);
 
                 if self.vardata.analyzer.learnt_clause.len() == 1 {
