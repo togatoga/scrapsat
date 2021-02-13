@@ -296,11 +296,14 @@ impl Solver {
                         if self.vardata.define(v) {
                             continue;
                         }
+
                         let lit = match self.vardata.polarity[v] {
                             LitBool::True => Lit::new(v.val(), true),
                             _ => Lit::new(v.val(), false),
                         };
+                        self.vardata.trail.new_decision_level();
                         self.vardata.enqueue(lit, CRef::UNDEF);
+                        break;
                     } else {
                         self.result = SatResult::Sat;
                         return SatResult::Sat;

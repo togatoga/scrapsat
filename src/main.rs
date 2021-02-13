@@ -29,14 +29,24 @@ fn main() {
         std::fs::File::open(input).unwrap_or_else(|_| panic!("can't open file {}", input)),
     ) {
         Ok(cnf) => {
-            eprintln!("{:?}", cnf);
             cnf.clauses.iter().for_each(|lits| {
                 solver.add_clause(lits);
             });
+            match solver.solve() {
+                scrapsat::core::SatResult::Sat => {
+                    println!("c SAT");
+                }
+                scrapsat::core::SatResult::Unsat => {
+                    println!("c UNSAT");
+                }
+                scrapsat::core::SatResult::Unknown => {
+                    println!("c UNKNOWN");
+                }
+            };
         }
         Err(e) => {
             eprintln!("{:?}", e);
-            panic!("fail to parse");
+            panic!("failed to parse");
         }
     }
 }

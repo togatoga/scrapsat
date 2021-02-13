@@ -60,6 +60,7 @@ impl VarData {
         let sep = self.trail.stack_lim[backtrack_level as usize];
         for p in stack.iter().skip(sep).rev() {
             let v = p.var();
+            self.order_heap.push(v);
             self.polarity[v] = p.true_lbool();
             self.assigns[v] = LitBool::UnDef;
             self.reason[v] = CRef::UNDEF;
