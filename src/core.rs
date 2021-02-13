@@ -277,12 +277,35 @@ impl Solver {
                     return SatResult::Unsat;
                 }
                 let backtrack_level = self.analyze(confl);
-                let learnt_clause = &self.vardata.analyzer.learnt_clause;
-                let cref = self.db.alloc(&learnt_clause, true);
-                self.watches.watch(&learnt_clause, cref);
                 self.vardata.cancel_trail_until(backtrack_level);
+
+                if self.vardata.analyzer.learnt_clause.len() == 1 {
+                    let p = self.vardata.analyzer.learnt_clause[0];
+                    self.vardata.enqueue(p, CRef::UNDEF);
+                } else {
+                    let cref = self.db.alloc(&self.vardata.analyzer.learnt_clause, true);
+                    self.watches
+                        .watch(&self.vardata.analyzer.learnt_clause, cref);
+                    self.vardata
+                        .enqueue(self.vardata.analyzer.learnt_clause[0], cref);
+                }
             } else {
                 // No conflict
+                loop {
+                    if let Some(v) = self.vardata.order_heap.pop() {
+                        if self.vardata.define(v) {
+                            continue;
+                        }
+                        let lit = match self.vardata.polarity[v] {
+                            LitBool::True => Lit::new(v.val(), true),
+                            _ => Lit::new(v.val(), false),
+                        };
+                        self.vardata.enqueue(lit, CRef::UNDEF);
+                    } else {
+                        self.result = SatResult::Sat;
+                        return SatResult::Sat;
+                    }
+                }
             }
         }
     }

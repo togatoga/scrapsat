@@ -2,7 +2,7 @@ use analyzer::Analyzer;
 
 use crate::{
     clause::alloc::CRef,
-    collections::idxvec::VarVec,
+    collections::{heap::Heap, idxvec::VarVec},
     types::{bool::LitBool, lit::Lit, var::Var},
 };
 
@@ -21,7 +21,9 @@ pub struct VarData {
     pub analyzer: Analyzer,
     pub trail: AssignTrail,
     /// polarity
-    polarity: VarVec<LitBool>,
+    pub polarity: VarVec<LitBool>,
+    /// the decision order
+    pub order_heap: Heap,
 }
 
 impl VarData {
@@ -33,17 +35,21 @@ impl VarData {
             analyzer: Analyzer::new(),
             trail: AssignTrail::new(),
             polarity: VarVec::new(),
+            order_heap: Heap::new(),
         }
     }
     pub fn num_var(&self) -> usize {
         self.assigns.len()
     }
     pub fn new_var(&mut self) {
+        let v = Var(self.num_var() as u32);
         self.assigns.push(LitBool::default());
         self.level.push(0);
         self.reason.push(CRef::UNDEF);
         self.polarity.push(LitBool::True);
         self.analyzer.seen.push(false);
+
+        self.order_heap.push(v);
     }
 
     pub fn cancel_trail_until(&mut self, backtrack_level: u32) {
@@ -70,6 +76,9 @@ impl VarData {
         self.reason[var] = reason;
     }
 
+    pub fn define(&self, var: Var) -> bool {
+        self.assigns[var] != LitBool::UnDef
+    }
     pub fn eval(&self, lit: Lit) -> LitBool {
         LitBool::from(self.assigns[lit.var()] as i8 ^ lit.neg() as i8)
     }
