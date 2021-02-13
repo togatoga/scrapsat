@@ -1,7 +1,7 @@
 use analyzer::Analyzer;
 
 use crate::{
-    clause::alloc::CRef,
+    clause::{alloc::CRef, db::ClauseDB},
     collections::{heap::Heap, idxvec::VarVec},
     types::{bool::LitBool, lit::Lit, var::Var},
 };
@@ -49,6 +49,76 @@ impl VarData {
         self.analyzer.seen.push(false);
 
         self.order_heap.push(v);
+    }
+
+    fn redundant(&mut self, root: CRef, db: &mut ClauseDB) -> bool {
+        // Check whether a literal can reach a decision variable or unit clause literal.
+        // Self-subsume
+
+        self.analyzer.ccmin_stack.clear();
+        self.analyzer.ccmin_stack.push(root);
+
+        let top = self.analyzer.ccmin_clear.len();
+        let mut redundant = true;
+        'redundant: while let Some(pos) = self.analyzer.ccmin_stack.pop() {
+            let clause = db.get_mut(pos);
+
+            for c in clause.iter().skip(1) {
+                if !self.analyzer.seen[c.var()] && self.level(c.var()) > 0 {
+                    // If a 'c' is decided by a level that is different from conflict literals.
+                    // abstract_level(c) & abstract_levels == 0
+                    let cref = self.reason(c.var());
+                    if cref != CRef::UNDEF {
+                        self.analyzer.seen[c.var()] = true;
+                        self.analyzer.ccmin_stack.push(cref);
+                        self.analyzer.ccmin_clear.push(*c);
+                    } else {
+                        redundant = false;
+                        break 'redundant;
+                    }
+                }
+            }
+        }
+        if !redundant {
+            // A 'c' is a decision variable or unit clause literal.
+            // which means a "lit" isn't redundant
+            for lit in self.analyzer.ccmin_clear.iter().skip(top) {
+                self.analyzer.seen[lit.var()] = false;
+            }
+            self.analyzer.ccmin_clear.truncate(top);
+        }
+        redundant
+    }
+
+    pub fn minimize_conflict_clause(&mut self, db: &mut ClauseDB) {
+        debug_assert!(self.analyzer.ccmin_clear.is_empty());
+        debug_assert!(self.analyzer.ccmin_stack.is_empty());
+
+        let n = self.analyzer.learnt_clause.len();
+        let mut new_size = 1;
+        for i in 1..n {
+            let lit = self.analyzer.learnt_clause[i];
+            let redundant = {
+                let cref = self.reason(lit.var());
+                if cref != CRef::UNDEF {
+                    self.redundant(cref, db)
+                } else {
+                    false
+                }
+            };
+            if !redundant {
+                self.analyzer.learnt_clause[new_size] = lit;
+                new_size += 1;
+            }
+        }
+        self.analyzer.learnt_clause.truncate(new_size);
+
+        // clear
+        for lit in self.analyzer.ccmin_clear.iter() {
+            self.analyzer.seen[lit.var()] = false;
+        }
+        self.analyzer.ccmin_clear.clear();
+        self.analyzer.ccmin_stack.clear();
     }
 
     pub fn cancel_trail_until(&mut self, backtrack_level: u32) {

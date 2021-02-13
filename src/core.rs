@@ -241,6 +241,8 @@ impl Solver {
             .analyze_toclear
             .clone_from(&self.vardata.analyzer.learnt_clause);
 
+        self.vardata.minimize_conflict_clause(&mut self.db);
+
         let backtrack_level = if self.vardata.analyzer.learnt_clause.len() == 1 {
             0
         } else {
