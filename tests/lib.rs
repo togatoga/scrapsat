@@ -1,8 +1,5 @@
 #[cfg(test)]
 mod tests {
-
-    use std::fmt::format;
-
     use scrapsat::types::lit::Lit;
     use scrapsat::{
         core::{SatResult, Solver},
@@ -76,10 +73,7 @@ mod tests {
         } else {
             SatResult::Unsat
         };
-        let skip_cnfs = vec![
-            "cnf/sat/cnfgen_php_30_50.cnf",
-            "cnf/unsat/graph_color_unsat.cnf",
-        ];
+        let skip_cnfs = vec!["cnf/unsat/graph_color_unsat.cnf"];
         let entries = WalkDir::new(format!("cnf/{}/", which));
         for entry in entries
             .into_iter()

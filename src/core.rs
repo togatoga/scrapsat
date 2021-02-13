@@ -1,4 +1,5 @@
 use data::VarData;
+use luby::LubyRestart;
 use watcher::{Watch, Watchers};
 
 use crate::{
@@ -9,6 +10,7 @@ use crate::{
 mod analyzer;
 mod assign;
 mod data;
+mod luby;
 mod watcher;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -30,6 +32,7 @@ pub struct Solver {
     /// check clauses if a propagation or conflict happens.
     watches: Watchers,
     result: SatResult,
+    luby: LubyRestart,
     pub models: Vec<LitBool>,
 }
 
@@ -40,6 +43,7 @@ impl Default for Solver {
             vardata: VarData::new(),
             watches: Watchers::new(),
             result: SatResult::Unknown,
+            luby: LubyRestart::default(),
             models: Vec::new(),
         }
     }
@@ -47,13 +51,7 @@ impl Default for Solver {
 
 impl Solver {
     pub fn new() -> Solver {
-        Solver {
-            db: ClauseDB::new(),
-            vardata: VarData::new(),
-            watches: Watchers::new(),
-            result: SatResult::Unknown,
-            models: Vec::new(),
-        }
+        Solver::default()
     }
 
     fn simplify_clause(&self, lits: &[Lit]) -> (bool, Vec<Lit>) {
@@ -273,7 +271,8 @@ impl Solver {
         }
         backtrack_level
     }
-    fn search(&mut self) -> SatResult {
+    fn search(&mut self, conflict_limit: u32) -> SatResult {
+        let mut conflict_cnt = 0;
         loop {
             let confl = self.propagate();
             // conflict
@@ -297,9 +296,16 @@ impl Solver {
                         .enqueue(self.vardata.analyzer.learnt_clause[0], cref);
                 }
                 self.vardata.order_heap.decay();
+                conflict_cnt += 1;
             } else {
                 // No conflict
                 loop {
+                    // restart
+                    if conflict_cnt >= conflict_limit {
+                        self.vardata.cancel_trail_until(0);
+                        return SatResult::Unknown;
+                    }
+
                     if let Some(v) = self.vardata.order_heap.pop() {
                         if self.vardata.define(v) {
                             continue;
@@ -325,8 +331,11 @@ impl Solver {
             return self.result;
         }
         let mut result = SatResult::Unknown;
+        let mut restart_cnt = 0;
         while result == SatResult::Unknown {
-            result = self.search();
+            let conflict_limit = self.luby.seq(restart_cnt) as u32;
+            result = self.search(conflict_limit);
+            restart_cnt += 1;
         }
 
         if result == SatResult::Sat {

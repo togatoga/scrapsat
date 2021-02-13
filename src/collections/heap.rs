@@ -133,7 +133,7 @@ impl Heap {
     pub fn decay(&mut self) {
         self.bump_inc /= self.decay_ratio;
     }
-    
+
     pub fn bump_activity(&mut self, v: Var) {
         self.activity[v] += self.bump_inc;
 
