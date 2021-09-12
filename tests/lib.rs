@@ -105,19 +105,19 @@ mod tests {
 
                 assert!(
                     result == expected,
-                    format!(
+                    
                         "cnf: {}, Result: {:?} Expected: {:?}",
                         path_str, result, expected
-                    )
+                    
                 );
 
                 if result == SatResult::Sat {
                     assert!(
                         sat_model_check(&cnf.clauses, &solver.models),
-                        format!(
+                        
                             "The models are wrong!! cnf: {}, Result: {:?} Expected: {:?}",
                             path_str, result, expected
-                        )
+                        
                     );
                 }
             }
